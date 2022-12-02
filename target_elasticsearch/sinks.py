@@ -140,3 +140,4 @@ class ElasticSink(BatchSink):
 
     def clean_up(self) -> None:
         self.logger.debug(f"Cleaning up sink for {self.stream_name}")
+        self.client.close()
