@@ -6,6 +6,19 @@ import elasticsearch
 from elasticsearch.helpers import bulk
 from singer_sdk.sinks import BatchSink
 
+from target_elasticsearch.target import (
+    SCHEME,
+    HOST,
+    PORT,
+    USERNAME,
+    PASSWORD,
+    BEARER_TOKEN,
+    API_KEY_ID,
+    API_KEY,
+    SSL_CA_FILE,
+    SCHEMA_MAPPING,
+)
+
 
 class ElasticSink(BatchSink):
     """ElasticSink target sink class."""
@@ -36,7 +49,7 @@ class ElasticSink(BatchSink):
         updated_records = []
         for r in records:
             schemas = {}
-            for k, v in self.config["schema_mapping"][self.stream_name]:
+            for k, v in self.config[SCHEMA_MAPPING][self.stream_name]:
                 schemas[k] = r.get(v, None)
             updated_records.append(json.dumps({"index": index, "_source": r} | schemas))
 
@@ -44,8 +57,23 @@ class ElasticSink(BatchSink):
 
     # TODO import elasticsearch and handle multiple auth patterns
     def authenticated_client(self) -> elasticsearch.Elasticsearch:
+        scheme = self.config[SCHEME]
+        if self.config[SSL_CA_FILE]:
+            scheme = "https"
 
-        return elasticsearch.Elasticsearch()
+        endpoint = f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"
+        config = {"hosts": [endpoint]}
+
+        if self.config[USERNAME] and self.config[PASSWORD]:
+            pass
+        elif self.config[API_KEY] and self.config[API_KEY_ID]:
+            pass
+        elif self.config[BEARER_TOKEN]:
+            pass
+        else:
+            self.logger.info("using default elastic search connection config")
+
+        return elasticsearch.Elasticsearch(**config)
 
     def write_output(self, records):
         index = self.index()
