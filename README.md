@@ -62,16 +62,6 @@ target_elasticsearch --config CONFIG --discover > ./catalog.json
 
 ## Developer Resources
 
-### Release Process
-For each release we will create a version following [semver](https://semver.org/)
-
-GitHub Steps
-1. Merge all changes you'd like to be in release to main
-1. Update pyproject.toml with your released version ie 0.0.2
-1. Go to github repo click create a release
-1. Create a tag for the release (tag will be in the form "v{version}" ie "v0.0.2" release
-
-
 ### Initialize your Development Environment
 
 ```bash
@@ -82,8 +72,8 @@ poetry run pre-commit install
 
 ### Create and Run Tests
 
-1. Create tests within the `tap_elasticsearch/tests` subfolder
-1. To Run tests, first set environment variables in your current shell for all required settings from the [Settings](#Settings) section above. Example for UNIX base systems running `export TAP_elasticsearch_USER_ID="xxxxx"` then run:
+1. Create tests within the `target_elasticsearch/tests` subfolder
+1. To Run tests, first set environment variables in your current shell for all required settings from the [Settings](#Settings) section above. Example for UNIX base systems running `export Target_elasticsearch_USER_ID="xxxxx"` then run:
 
 ```bash
 poetry run pytest
