@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Only lint using the primary version used for dev
         python-version: [3.9]
     steps:
     - uses: actions/checkout@v2
@@ -31,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python '${{ matrix.python-version }}'
@@ -78,4 +77,4 @@ jobs:
         pip install meltano
         meltano install
     - name: smoke-test-tap
-      run: meltano run tap-smoke-test target-postgres
+      run: meltano run tap-smoke-test target-elasticsearch
