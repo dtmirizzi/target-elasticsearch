@@ -2,86 +2,98 @@ from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 from target_elasticsearch import sinks
 
-class TargetElastic(Target):
+SCHEME = "scheme"
+HOST = "host"
+PORT = "port"
+USERNAME = "username"
+PASSWORD = "password"
+BEARER_TOKEN = "bearer_token"
+API_KEY_ID = "api_key_id"
+API_KEY = "api_key"
+SSL_CA_FILE = "ssl_ca_file"
+INDEX_FORMAT = "index_format"
+SCHEMA_MAPPING = "schema_mapping"
+
+
+class TargetElasticsearch(Target):
     """Sample target for parquet."""
 
-    name = "target-Elastic"
+    name = "target-elasticsearch"
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "scheme",
+            SCHEME,
             th.StringType,
             description="http scheme used for connecting to elasticsearch",
             default="http",
             required=True,
         ),
         th.Property(
-            "host",
+            HOST,
             th.StringType,
             description="host used to connect to elasticsearch",
             default="localhost",
             required=True,
         ),
         th.Property(
-            "port",
+            PORT,
             th.NumberType,
             description="port use to connect to elasticsearch",
             default="9200",
             required=True,
         ),
         th.Property(
-            "username",
+            USERNAME,
             th.StringType,
             description="basic auth username",
             default=None,
         ),
         th.Property(
-            "password",
+            PASSWORD,
             th.StringType,
             description="basic auth password",
             default=None,
         ),
         th.Property(
-            "bearer_token",
+            BEARER_TOKEN,
             th.StringType,
             description="bearer token for bearer authorization",
             default=None,
         ),
         th.Property(
-            "api_key_id",
+            API_KEY_ID,
             th.StringType,
             description="api key id for auth key authorization",
             default=None,
         ),
         th.Property(
-            "api_key",
+            API_KEY,
             th.StringType,
             description="api key for auth key authorization",
             default=None,
         ),
         th.Property(
-            "ssl_ca_file",
+            SSL_CA_FILE,
             th.StringType,
             description="location of the the SSL certificate for cert verification ie. `/some/path`",
             default=None,
         ),
         th.Property(
-            "index_format",
+            INDEX_FORMAT,
             th.StringType,
             description="can be used to handle custom index formatting such as specifying `-latest` index. available "
-                        "options: Monthly {.current_timestamp_monthly} or Yearly {.current_timestamp_yearly} ",
+            "options: Monthly {.current_timestamp_monthly} or Yearly {.current_timestamp_yearly} ",
             default="{.stream_name}-{.current_timestamp_daily}",
         ),
         th.Property(
-            "schema_mapping",
+            SCHEMA_MAPPING,
             th.ObjectType,
             description="this schema_mapping allows you to specify specific record values from the steam to be used as "
-                        "ECS schema types such as (_id, @timestamp)",
+            "ECS schema types such as (_id, @timestamp)",
             default=None,
-        )
+        ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
 
     @property
     def state(self) -> dict:
         return {}
-

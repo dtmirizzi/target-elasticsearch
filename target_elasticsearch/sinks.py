@@ -1,5 +1,9 @@
 import json
+from typing import List
 
+import elasticsearch
+
+from elasticsearch.helpers import bulk
 from singer_sdk.sinks import BatchSink
 
 
@@ -8,10 +12,12 @@ class ElasticSink(BatchSink):
 
     max_size = 1000  # Max records to write in one batch
 
-    def index(self, ) -> str:
+    def index(
+        self,
+    ) -> str:
         pass
 
-    def mapped_body(self, index, records) -> [str]:
+    def mapped_body(self, index, records) -> List[str]:
         """
         mapped_body maps config schemas to record schemas
         by default the record will be placed into _source and _id and @timestamp will be left for elastic to generate
@@ -37,18 +43,18 @@ class ElasticSink(BatchSink):
         return updated_records
 
     # TODO import elasticsearch and handle multiple auth patterns
-    def authenticated_client(self) -> any:
-        return {}
+    def authenticated_client(self) -> elasticsearch.Elasticsearch:
+
+        return elasticsearch.Elasticsearch()
 
     def write_output(self, records):
         index = self.index()
-        # get index
-        self.logger.info(f"Writing elastic index to {index}")
         # build batch request body
-        records = self.mapped_body(records)
+        records = self.mapped_body(index, records)
         # build an authenticated request and send request body
         cli = self.authenticated_client()
         # https://elasticsearch-py.readthedocs.io/en/master/helpers.html#bulk-helpers
+        self.logger.info(f"Writing elastic index to {index}")
         bulk(cli, records)
 
     def process_batch(self, context: dict) -> None:
