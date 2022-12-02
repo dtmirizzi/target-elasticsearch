@@ -25,6 +25,7 @@ class ElasticSink(BatchSink):
 
     max_size = 1000  # Max records to write in one batch
 
+    # TODO Define templating
     def index(
         self,
     ) -> str:
