@@ -1,4 +1,4 @@
-# target-elasticsearch
+# target-elasticsearch [DRAFT]
 
 `target-elasticsearch`  is a Singer target for [Elastic](https://www.elastic.co/).
 
