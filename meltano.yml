@@ -1,5 +1,7 @@
 version: 1
 default_environment: dev
+environments:
+  - name: dev
 send_anonymous_usage_stats: true
 project_id: "target-postgres"
 plugins:
