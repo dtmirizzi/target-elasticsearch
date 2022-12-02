@@ -79,10 +79,9 @@ class ElasticSink(BatchSink):
         }
         }]
         * Not really loving this implementation *
-        :param records: str
-        :return: List[str]
+        @param records: str
+        @return: List[str]
         """
-
         updated_records = []
         for r in records:
             schemas = {}
@@ -102,6 +101,11 @@ class ElasticSink(BatchSink):
 
     # TODO import elasticsearch and handle multiple auth patterns
     def _authenticated_client(self) -> elasticsearch.Elasticsearch:
+        """
+        _authenticated_client generates a newly authenticated elasticsearch client
+        attempting to support all auth permutations and ssl concerns
+        @return: elasticsearch.Elasticsearch
+        """
         scheme = self.config[SCHEME]
         if self.config[SSL_CA_FILE]:
             scheme = "https"
