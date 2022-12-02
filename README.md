@@ -105,10 +105,11 @@ meltano install
 Now you can test and orchestrate using Meltano:
 
 ```bash
+meltano install
 # Test invocation:
 meltano invoke target_elasticsearch --version
 # OR run a test `elt` pipeline:
-meltano elt tap-gitlab target_elasticsearch
+meltano elt tap-smoke-test target_elasticsearch
 ```
 
 ### SDK Dev Guide
