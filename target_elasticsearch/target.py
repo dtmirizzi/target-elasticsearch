@@ -1,18 +1,19 @@
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 from target_elasticsearch import sinks
-
-SCHEME = "scheme"
-HOST = "host"
-PORT = "port"
-USERNAME = "username"
-PASSWORD = "password"
-BEARER_TOKEN = "bearer_token"
-API_KEY_ID = "api_key_id"
-API_KEY = "api_key"
-SSL_CA_FILE = "ssl_ca_file"
-INDEX_FORMAT = "index_format"
-SCHEMA_MAPPING = "schema_mapping"
+from target_elasticsearch.common import (
+    INDEX_FORMAT,
+    SCHEME,
+    HOST,
+    PORT,
+    USERNAME,
+    PASSWORD,
+    BEARER_TOKEN,
+    API_KEY_ID,
+    API_KEY,
+    SSL_CA_FILE,
+    SCHEMA_MAPPING,
+)
 
 
 class TargetElasticsearch(Target):
@@ -38,7 +39,7 @@ class TargetElasticsearch(Target):
             PORT,
             th.NumberType,
             description="port use to connect to elasticsearch",
-            default="9200",
+            default=9200,
             required=True,
         ),
         th.Property(
@@ -82,15 +83,15 @@ class TargetElasticsearch(Target):
             th.StringType,
             description="can be used to handle custom index formatting such as specifying `-latest` index. available "
             "options: Monthly {.current_timestamp_monthly} or Yearly {.current_timestamp_yearly} ",
-            default="{.stream_name}-{.current_timestamp_daily}",
+            default="{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
-        th.Property(
-            SCHEMA_MAPPING,
-            th.ObjectType,
-            description="this schema_mapping allows you to specify specific record values from the steam to be used as "
-            "ECS schema types such as (_id, @timestamp)",
-            default=None,
-        ),
+        # th.Property(
+        #    SCHEMA_MAPPING,
+        #    th.ObjectType(),
+        #    description="this schema_mapping allows you to specify specific record values from the steam to be used as "
+        #    "ECS schema types such as (_id, @timestamp)",
+        #    default=None,
+        # ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
 

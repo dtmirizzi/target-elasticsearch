@@ -1,24 +1,27 @@
 version: 1
 default_environment: dev
 environments:
-  - name: dev
+- name: dev
 send_anonymous_usage_stats: true
-project_id: "target-postgres"
+project_id: target-postgres
 plugins:
   extractors:
-  - name: "tap-smoke-test"
-    namespace: "tap_smoke_test"
-    executable: "tap-smoke-test"
-    pip_url: "git+https://gitlab.com/meltano/tap-smoke-test.git"
+  - name: tap-smoke-test
+    namespace: tap_smoke_test
+    pip_url: git+https://github.com/meltano/tap-smoke-test.git
+    executable: tap-smoke-test
     config:
       streams:
       - stream_name: animals
-        "input_filename": "https://gitlab.com/meltano/tap-smoke-test/-/raw/main/demo-data/animals-data.jsonl"
+        input_filename: https://raw.githubusercontent.com/meltano/tap-smoke-test/main/demo-data/animals-data.jsonl
       - stream_name: page_views
-        "input_filename": "https://gitlab.com/meltano/tap-smoke-test/-/raw/main/demo-data/pageviews-data.jsonl"
+        input_filename: https://raw.githubusercontent.com/meltano/tap-smoke-test/main/demo-data/pageviews-data.jsonl
   loaders:
-  - name: "target-elasticsearch"
-    namespace: "target_elasticsearch"
+  - name: target-elasticsearch
+    namespace: target_elasticsearch
     pip_url: -e .
     config:
-      host: "localhost"
+      host: localhost
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl

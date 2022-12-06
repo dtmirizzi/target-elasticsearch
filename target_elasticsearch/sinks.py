@@ -12,7 +12,7 @@ from singer_sdk.sinks import BatchSink
 
 import datetime
 
-from target_elasticsearch.target import (
+from target_elasticsearch.common import (
     INDEX_FORMAT,
     SCHEME,
     HOST,
@@ -24,11 +24,10 @@ from target_elasticsearch.target import (
     API_KEY,
     SSL_CA_FILE,
     SCHEMA_MAPPING,
+    ELASTIC_YEARLY_FORMAT,
+    ELASTIC_MONTHLY_FORMAT,
+    ELASTIC_DAILY_FORMAT,
 )
-
-ELASTIC_YEARLY_FORMAT = "%Y"
-ELASTIC_MONTHLY_FORMAT = "%Y.%m"
-ELASTIC_DAILY_FORMAT = "%Y.%m.%D"
 
 
 class ElasticSink(BatchSink):
@@ -64,7 +63,7 @@ class ElasticSink(BatchSink):
         } | schemas
         environment = jinja2.Environment()
         template = environment.from_string(self.config[INDEX_FORMAT])
-        return template.render(**arguments)
+        return template.render(**arguments).replace("_", "-")
 
     def mapped_body(self, records: List[str]) -> List[str]:
         """
@@ -83,19 +82,23 @@ class ElasticSink(BatchSink):
         @return: List[str]
         """
         updated_records = []
+        mapping = {}
+        if SCHEMA_MAPPING in self.config:
+            mapping = self.config[SCHEMA_MAPPING]
         for r in records:
             schemas = {}
-            for k, v in self.config[SCHEMA_MAPPING][self.stream_name]:
-                expression = jsonpath_ng.parse(v)
-                match = expression.find(json.loads(r))
-                if len(match) == 0:
-                    self.logger.warning(
-                        f"schema key {k} with json path {v} could not be found for record"
-                    )
-                else:
-                    schemas[k] = match
+            if self.stream_name in mapping:
+                for k, v in mapping[self.stream_name]:
+                    expression = jsonpath_ng.parse(v)
+                    match = expression.find(json.loads(r))
+                    if len(match) == 0:
+                        self.logger.warning(
+                            f"schema key {k} with json path {v} could not be found for record"
+                        )
+                    else:
+                        schemas[k] = match
             index = self.index(schemas)
-            updated_records.append(json.dumps({"index": index, "_source": r} | schemas))
+            updated_records.append(json.dumps({"_index": index, "_source": r} | schemas))
 
         return updated_records
 
@@ -107,17 +110,17 @@ class ElasticSink(BatchSink):
         @return: elasticsearch.Elasticsearch
         """
         scheme = self.config[SCHEME]
-        if self.config[SSL_CA_FILE]:
+        if SSL_CA_FILE in self.config:
             scheme = "https"
 
         endpoint = f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"
         config = {"hosts": [endpoint]}
 
-        if self.config[USERNAME] and self.config[PASSWORD]:
+        if USERNAME in self.config and PASSWORD in self.config:
             pass
-        elif self.config[API_KEY] and self.config[API_KEY_ID]:
+        elif API_KEY in self.config and API_KEY_ID in self.config:
             pass
-        elif self.config[BEARER_TOKEN]:
+        elif BEARER_TOKEN in self.config:
             pass
         else:
             self.logger.info("using default elastic search connection config")
@@ -130,11 +133,11 @@ class ElasticSink(BatchSink):
         # writing to elastic via bulk helper function
         # https://elasticsearch-py.readthedocs.io/en/master/helpers.html#bulk-helpers
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
+        self.logger.info(records)
         bulk(self.client, records)
 
     def process_batch(self, context: dict) -> None:
         records = context["records"]
-        self.tally_duplicate_merged(len(records) - len(set(records)))
         self.write_output(records)
         self.tally_record_written(len(records))
 
