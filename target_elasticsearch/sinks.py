@@ -121,7 +121,7 @@ class ElasticSink(BatchSink):
         """
         _authenticated_client generates a newly authenticated elasticsearch client
         attempting to support all auth permutations and ssl concerns
-
+        https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
         @return: elasticsearch.Elasticsearch
         """
         config = {}
