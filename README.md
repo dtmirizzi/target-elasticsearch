@@ -1,4 +1,4 @@
-# target-elasticsearch [DRAFT]
+# target-elasticsearch [BETA]
 
 `target-elasticsearch` ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg) is a Singer target for [Elastic](https://www.elastic.co/).
 
