@@ -1,9 +1,11 @@
 name: Build and Release target-elasticsearch
 
-on:
-  push:
-    tags:
-      - '0.*'
+on: [push]
+
+#on:
+#  push:
+#    tags:
+#      - '0.*'
 
 jobs:
   release:
@@ -29,6 +31,7 @@ jobs:
         poetry build
     - name: Release
       run: |
+        echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
         echo ${{ env.GITHUB_REF }}
         echo $(echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g')
         poetry version $(echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g')
