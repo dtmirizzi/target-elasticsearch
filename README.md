@@ -5,10 +5,6 @@
 Some target development because I am currently hacking together something together with a bash script
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
-## Capabilities
-
-* `about`
-
 ## Settings
 
 | Setting             | Required |                       Default                       | Description                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -23,8 +19,8 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 | api_key             |  False   |                        None                         | api key for auth key authorization [as per elastic documentation](https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html#auth-apikey)                                                                                                                                                                                                                                |
 | ssl_ca_file         |  False   |                        None                         | location of the the SSL certificate for cert verification ie. `/some/path` [as per elastic documentation](https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html#_verifying_https_with_ca_certificates)                                                                                                                                                              |
 | index_format        |  False   | ecs-{{ stream_name }}-{{ current_timestamp_daily }} | can be used to handle custom index formatting such as specifying `-latest` index. Default options: Daily `{{ current_timestamp_daily }}`, Monthly `{{ current_timestamp_monthly }}`, or Yearly `{{ current_timestamp_yearly }}`. You should use fields specified in `index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}. There are also helper fuctions such as {{ to_daily(timestamp) }}`. |
-| index_schema_fields |  False   |                        None                         | this id map allows you to specify specific record values from the stream to be used in index formulation.                                                                                                                                                                                                                                                                                             |
-| metadata_fields     |  false   |                        None                         | this should be used to pull out specific fields to be used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)                                                                                                                                                                                                                         |
+| index_schema_fields |  False   |                        None                         | this id map allows you to specify specific record values via jsonpath from the stream to be used in index formulation.                                                                                                                                                                                                                                                                                |
+| metadata_fields     |  false   |                        None                         | this should be used to pull out specific fields via jsonpath to be used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)                                                                                                                                                                                                            |
 
 A full list of supported settings and capabilities is available by running: `target-elasticsearch --about`
 
