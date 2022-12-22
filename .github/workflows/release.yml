@@ -32,8 +32,7 @@ jobs:
     - name: Release
       run: |
         echo ${{ env.GITHUB_REF }}
-        version= echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g'
-        echo $version
-        #poetry version ${{ version }}
+        echo $(echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g')
+        #poetry version $(echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g')
         #poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
         #poetry publish -u ${{ secrets.PYPI_USERNAME }}
