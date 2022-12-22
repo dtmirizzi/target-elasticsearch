@@ -31,8 +31,8 @@ jobs:
         poetry build
     - name: Release
       run: |
-        echo ${{ GITHUB_REF }}
-        version= echo ${{ GITHUB_REF }} | sed 's/refs\/heads\///g'
+        echo ${{ env.GITHUB_REF }}
+        version= echo ${{ env.GITHUB_REF }} | sed 's/refs\/heads\///g'
         echo $version
         #poetry version ${{ version }}
         #poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
