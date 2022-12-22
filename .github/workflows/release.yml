@@ -24,8 +24,8 @@ jobs:
     - name: Release
       run: |
         poetry install
+        poetry version ${{  github.ref_name }}
         poetry build
         echo "Tag name from github.ref_name: ${{  github.ref_name }}"
-        poetry version ${{  github.ref_name }}
         poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
         poetry publish -u ${{ secrets.PYPI_USERNAME }}
