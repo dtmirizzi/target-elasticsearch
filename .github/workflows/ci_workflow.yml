@@ -77,4 +77,6 @@ jobs:
         pip install meltano
         meltano install
     - name: smoke-test-tap
-      run: meltano run tap-smoke-test target-elasticsearch
+      run: |
+        make local-es
+        meltano run tap-smoke-test target-elasticsearch
