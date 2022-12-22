@@ -7,6 +7,11 @@
 Some target development because I am currently hacking together something together with a bash script
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
+## Video
+
+[![Blinking LEDs](http://img.youtube.com/vi/k6yr8P1f93U/0.jpg)](https://www.youtube.com/watch?v=k6yr8P1f93U "target")
+
+
 ## Settings
 
 | Setting             | Required |                       Default                       | Description                                                                                                                                                                                                                                                                                                                                                                                             |
