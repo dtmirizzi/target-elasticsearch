@@ -12,7 +12,8 @@ from target_elasticsearch.common import (
     API_KEY_ID,
     API_KEY,
     SSL_CA_FILE,
-    SCHEMA_MAPPING,
+    INDEX_TEMPLATE_FIELDS,
+    METADATA_FIELDS,
 )
 
 
@@ -86,7 +87,14 @@ class TargetElasticsearch(Target):
             default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
         th.Property(
-            SCHEMA_MAPPING,
+            INDEX_TEMPLATE_FIELDS,
+            th.ObjectType(),
+            description="this schema_mapping allows you to specify specific record values from the steam to be used as "
+            "ECS schema types such as (_id, @timestamp)",
+            default=None,
+        ),
+        th.Property(
+            METADATA_FIELDS,
             th.ObjectType(),
             description="this schema_mapping allows you to specify specific record values from the steam to be used as "
             "ECS schema types such as (_id, @timestamp)",

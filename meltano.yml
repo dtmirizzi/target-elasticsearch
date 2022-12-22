@@ -22,7 +22,19 @@ plugins:
     pip_url: -e .
     config:
       host: localhost
-      schema_mapping:
+      index_format: "{{ stream_name }}-an-{{ foo }}-{{ to_daily(timestamp) }}"
+      stream_maps: # use stream maps to do more complex base record manipulation
         animals:
-          _id: id
-          '@timestamp': created_at
+          "first_name": "description.split()[0]"
+          'tz': "created_at" # this will copy created_at to tz INSIDE the record
+      index_schema_fields: # This occurs after stream_maps, it should be used to pull out specific fields for index creation
+        animals:
+          'timestamp': 'tz' # Best not to name variables that will be used for index fmt that is not standard python
+          "foo": 'bar' #Using keys that do not exist in the json object is fine, will be interp literally
+        page_views:
+          'timestamp': created_at
+          "foo": "buzz"
+      metadata_fields: # This occurs after stream_maps, it should be used to pull out specific fields to be used on for ecs index patters
+        animals:
+          '_id': "id" # this will add _id to a top level field to comply with ecs
+          '@timestamp': "tz" # this will add @timestamp to a top level field to comply with ecs
