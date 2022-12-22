@@ -26,4 +26,4 @@ jobs:
         poetry install
     - name: BUILD
       run: |
-        poetry publish -u ${{ secrets.PYPI_USER }} -p ${{ secrets.PYPI_PASS }} --build
+        poetry publish -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASS }} --build
