@@ -1,11 +1,11 @@
 name: Build and Release target-elasticsearch
 
-on: [push]
+#on: [push]
 
-#on:
-#  push:
-#    tags:
-#      - '0.*'
+on:
+  push:
+    tags:
+      - '0.*'
 
 jobs:
   release:
