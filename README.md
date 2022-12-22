@@ -1,6 +1,8 @@
 # target-elasticsearch [BETA]
 
-`target-elasticsearch` ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg) is a Singer target for [Elastic](https://www.elastic.co/).
+![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg) ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/release.yml/badge.svg)
+
+`target-elasticsearch` is a Singer target for [Elastic](https://www.elastic.co/).
 
 Some target development because I am currently hacking together something together with a bash script
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.

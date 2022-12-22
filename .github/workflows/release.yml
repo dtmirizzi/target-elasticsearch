@@ -26,5 +26,6 @@ jobs:
         poetry install
     - name: BUILD
       run: |
+        poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
         poetry build
-        poetry publish -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASS }}
+        poetry publish -u ${{ secrets.PYPI_USERNAME }}
