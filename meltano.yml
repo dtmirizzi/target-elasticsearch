@@ -26,6 +26,3 @@ plugins:
         animals:
           _id: id
           '@timestamp': created_at
-  - name: target-jsonl
-    variant: andyh1203
-    pip_url: target-jsonl
