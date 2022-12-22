@@ -98,7 +98,7 @@ Next, install Meltano (if you haven't already) and any needed plugins:
 # Install meltano
 pipx install meltano
 # Initialize meltano within this directory
-cd target_elasticsearch
+cd target-elasticsearch
 meltano install
 ```
 
@@ -107,9 +107,11 @@ Now you can test and orchestrate using Meltano:
 ```bash
 meltano install
 # Test invocation:
-meltano invoke target_elasticsearch --version
+meltano invoke target-elasticsearch --version
+# test configuration
+meltano config target-elasticsearch set --interactive
 # OR run a test `elt` pipeline:
-meltano elt tap-smoke-test target_elasticsearch
+meltano elt tap-smoke-test target-elasticsearch
 ```
 
 ### SDK Dev Guide
