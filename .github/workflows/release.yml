@@ -1,9 +1,9 @@
-name: Build target-elasticsearch
+name: Build and Release target-elasticsearch
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 
 jobs:
   release:
