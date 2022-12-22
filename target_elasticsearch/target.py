@@ -83,15 +83,15 @@ class TargetElasticsearch(Target):
             th.StringType,
             description="can be used to handle custom index formatting such as specifying `-latest` index. available "
             "options: Monthly {.current_timestamp_monthly} or Yearly {.current_timestamp_yearly} ",
-            default="{{ stream_name }}-{{ current_timestamp_daily}}",
+            default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
-        # th.Property(
-        #    SCHEMA_MAPPING,
-        #    th.ObjectType(),
-        #    description="this schema_mapping allows you to specify specific record values from the steam to be used as "
-        #    "ECS schema types such as (_id, @timestamp)",
-        #    default=None,
-        # ),
+        th.Property(
+            SCHEMA_MAPPING,
+            th.ObjectType(),
+            description="this schema_mapping allows you to specify specific record values from the steam to be used as "
+            "ECS schema types such as (_id, @timestamp)",
+            default=None,
+        ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
 

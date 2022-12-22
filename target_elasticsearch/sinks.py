@@ -1,9 +1,7 @@
-import json
-
 import elasticsearch
 import jinja2
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union, Any
 
 import jsonpath_ng
 from elasticsearch.helpers import bulk
@@ -45,7 +43,7 @@ class ElasticSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         self.client = self._authenticated_client()
 
-    def index(self, schemas: dict) -> str:
+    def template_index(self, schemas: dict) -> str:
         """
         _index templates the input index config to be used for elasticsearch indexing
         currently it operates using current time as index.
@@ -65,7 +63,7 @@ class ElasticSink(BatchSink):
         template = environment.from_string(self.config[INDEX_FORMAT])
         return template.render(**arguments).replace("_", "-")
 
-    def mapped_body(self, records: List[str]) -> List[str]:
+    def mapped_body(self, records: List[str]) -> list[dict[Union[str, Any], Union[str, Any]]]:
         """
         mapped_body maps config schemas to record schemas
         by default the record will be placed into _source and _id and @timestamp will be left for elastic to generate
@@ -83,57 +81,76 @@ class ElasticSink(BatchSink):
         """
         updated_records = []
         mapping = {}
+        distinct_indexes = set()
         if SCHEMA_MAPPING in self.config:
             mapping = self.config[SCHEMA_MAPPING]
         for r in records:
             schemas = {}
             if self.stream_name in mapping:
-                for k, v in mapping[self.stream_name]:
+                self.logger.info(mapping[self.stream_name])
+                for k, v in mapping[self.stream_name].items():
                     expression = jsonpath_ng.parse(v)
-                    match = expression.find(json.loads(r))
+                    match = expression.find(r)
                     if len(match) == 0:
                         self.logger.warning(
                             f"schema key {k} with json path {v} could not be found for record"
                         )
+                        schemas[k] = v
                     else:
-                        schemas[k] = match
-            index = self.index(schemas)
-            updated_records.append(json.dumps({"_index": index, "_source": r} | schemas))
+                        if len(match) < 1:
+                            self.logger.warning(
+                                f"schema key {k} with json path {v} has multiple associated fields, not "
+                                f"valid json"
+                            )
+                        schemas[k] = match[0].value
+            index = self.template_index(schemas)
+            distinct_indexes.add(index)
+            updated_records.append({"_op_type": "index", "_index": index, "_source": r} | schemas)
 
+        for index in distinct_indexes:
+            try:
+                self.client.indices.create(index=index)
+            except elasticsearch.exceptions.RequestError as e:
+                if e.error == "resource_already_exists_exception":
+                    self.logger.debug("index already created skipping creation")
+                else:  # Other exception - raise it
+                    raise e
         return updated_records
 
-    # TODO import elasticsearch and handle multiple auth patterns
     def _authenticated_client(self) -> elasticsearch.Elasticsearch:
         """
         _authenticated_client generates a newly authenticated elasticsearch client
         attempting to support all auth permutations and ssl concerns
+
         @return: elasticsearch.Elasticsearch
         """
+        config = {}
         scheme = self.config[SCHEME]
         if SSL_CA_FILE in self.config:
             scheme = "https"
+            config["ca_certs"] = self.config[SSL_CA_FILE]
 
-        endpoint = f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"
-        config = {"hosts": [endpoint]}
+        config["hosts"] = [f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"]
 
         if USERNAME in self.config and PASSWORD in self.config:
-            pass
+            config["basic_auth"] = (self.config[USERNAME], self.config[PASSWORD])
         elif API_KEY in self.config and API_KEY_ID in self.config:
-            pass
+            config["api_key"] = (self.config[API_KEY_ID], self.config[API_KEY])
         elif BEARER_TOKEN in self.config:
-            pass
+            config["bearer_auth"] = self.config[BEARER_TOKEN]
         else:
             self.logger.info("using default elastic search connection config")
 
         return elasticsearch.Elasticsearch(**config)
 
     def write_output(self, records):
+        # create index
         # build batch request body
         records = self.mapped_body(records)
         # writing to elastic via bulk helper function
         # https://elasticsearch-py.readthedocs.io/en/master/helpers.html#bulk-helpers
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
-        self.logger.info(records)
+        self.logger.debug(records)
         bulk(self.client, records)
 
     def process_batch(self, context: dict) -> None:
