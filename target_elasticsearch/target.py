@@ -82,22 +82,26 @@ class TargetElasticsearch(Target):
         th.Property(
             INDEX_FORMAT,
             th.StringType,
-            description="can be used to handle custom index formatting such as specifying `-latest` index. available "
-            "options: Monthly {.current_timestamp_monthly} or Yearly {.current_timestamp_yearly} ",
+            description="can be used to handle custom index formatting such as specifying `-latest` index. Default "
+            "options: Daily `{{ current_timestamp_daily }}`, Monthly `{{ current_timestamp_monthly }}`, "
+            "or Yearly `{{ current_timestamp_yearly }}`. You should use fields specified in "
+            "`index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}` . There are also helper "
+            "fuctions such as {{ to_daily(timestamp) }}",
             default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
         th.Property(
             INDEX_TEMPLATE_FIELDS,
             th.ObjectType(),
-            description="this schema_mapping allows you to specify specific record values from the steam to be used as "
-            "ECS schema types such as (_id, @timestamp)",
+            description="this id map allows you to specify specific record values via jsonpath from the stream to be "
+            "used in index formulation.",
             default=None,
         ),
         th.Property(
             METADATA_FIELDS,
             th.ObjectType(),
-            description="this schema_mapping allows you to specify specific record values from the steam to be used as "
-            "ECS schema types such as (_id, @timestamp)",
+            description="this should be used to pull out specific fields via jsonpath to be used on for [ecs metadata "
+            "patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html"
+            ")",
             default=None,
         ),
     ).to_dict()
