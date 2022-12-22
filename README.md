@@ -29,12 +29,6 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 | index_schema_fields |  False   |                        None                         | this id map allows you to specify specific record values via jsonpath from the stream to be used in index formulation.                                                                                                                                                                                                                                                                                  |
 | metadata_fields     |  false   |                        None                         | this should be used to pull out specific fields via jsonpath to be used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)                                                                                                                                                                                                              |
 
-## TODOS
-- Figure out why interactive config is not working well.
-- Add unit tests
-- figure out smoke test
-- Add index creation metadata. IE partitions and shards.
-
 A full list of supported settings and capabilities is available by running: `target-elasticsearch --about`
 
 ## Installation
