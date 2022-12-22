@@ -22,7 +22,6 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install
-        python3 -m pip install types-python-dateutil
     - name: Run pre-commit
       run: |
         poetry run pre-commit install
