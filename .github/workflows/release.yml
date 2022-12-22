@@ -1,9 +1,11 @@
 name: Build and Release target-elasticsearch
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push]
+
+#on:
+#  push:
+#    tags:
+#      - '0.*'
 
 jobs:
   release:
@@ -26,6 +28,12 @@ jobs:
         poetry install
     - name: BUILD
       run: |
-        poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
         poetry build
-        poetry publish -u ${{ secrets.PYPI_USERNAME }}
+    - name: Release
+      run: |
+        echo ${{ GITHUB_REF }}
+        version= echo ${{ GITHUB_REF }} | sed 's/refs\/heads\///g'
+        echo $version
+        #poetry version ${{ version }}
+        #poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+        #poetry publish -u ${{ secrets.PYPI_USERNAME }}
