@@ -1,3 +1,4 @@
+from typing import Dict
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 from target_elasticsearch import sinks
@@ -108,5 +109,5 @@ class TargetElasticsearch(Target):
     default_sink_class = sinks.ElasticSink
 
     @property
-    def state(self) -> dict:
+    def state(self) -> Dict:
         return {}
