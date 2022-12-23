@@ -47,7 +47,7 @@ class ElasticSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         self.client = self._authenticated_client()
 
-    def template_index(self, schemas: dict) -> str:
+    def template_index(self, schemas: Dict) -> str:
         """
         _index templates the input index config to be used for elasticsearch indexing
         currently it operates using current time as index.
@@ -70,7 +70,7 @@ class ElasticSink(BatchSink):
         template = environment.from_string(self.config[INDEX_FORMAT])
         return template.render(**arguments).replace("_", "-")
 
-    def build_fields(self, mapping: dict, record: str) -> dict:
+    def build_fields(self, mapping: Dict, record: str) -> dict:
         """
         build_fields parses records for supplied mapping to be used later in index templating and ecs metadata field formulation
         @param mapping: dict
@@ -99,7 +99,7 @@ class ElasticSink(BatchSink):
 
     def build_request_body_and_distinct_indices(
         self, records: List[str]
-    ) -> Tuple[List[dict[Union[str, Any], Union[str, Any]]], Set[str]]:
+    ) -> Tuple[List[Dict[Union[str, Any], Union[str, Any]]], Set[str]]:
         """
         build_request_body_and_distinct_indices builds the bulk request body
         and collects all distinct indices that will be used to create indices before bulk upload.
@@ -125,7 +125,7 @@ class ElasticSink(BatchSink):
 
         return updated_records, distinct_indices
 
-    def create_indices(self, indices: set) -> None:
+    def create_indices(self, indices: Set[str]) -> None:
         """
         create_indices creates elastic indices using cluster defaults
         @param indices: set
@@ -189,7 +189,7 @@ class ElasticSink(BatchSink):
         except elasticsearch.helpers.BulkIndexError as e:
             self.logger.error(e.errors)
 
-    def process_batch(self, context: dict) -> None:
+    def process_batch(self, context: Dict[str, Any]) -> None:
         """
         process_batch handles batch records and overrides the default sink implementation
         @param context: dict
