@@ -4,7 +4,6 @@
 ![](https://img.shields.io/pypi/dm/target-elasticsearch?color=3438BF&label=PyPI%20Downloads&)
 ![](https://img.shields.io/pypi/v/target-elasticsearch?color=3438BF&label=PyPI%20Package%20Version&)
 ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg)
-![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/release.yml/badge.svg)
 
 `target-elasticsearch` is a Singer target for [Elastic](https://www.elastic.co/).
 
@@ -13,7 +12,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ## Video
 
-[![Blinking LEDs](http://img.youtube.com/vi/k6yr8P1f93U/0.jpg)](https://www.youtube.com/watch?v=k6yr8P1f93U "target")
+[![video](http://img.youtube.com/vi/k6yr8P1f93U/0.jpg)](https://www.youtube.com/watch?v=k6yr8P1f93U "target")
 
 
 ## Settings
