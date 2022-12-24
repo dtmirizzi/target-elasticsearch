@@ -1,6 +1,9 @@
-# target-elasticsearch [BETA]
+# target-elasticsearch
 
-![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg) ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/release.yml/badge.svg)
+![](https://img.shields.io/badge/Maintenance%20Status-Prerelease%20(Beta)-yellow)
+![](https://img.shields.io/pypi/dm/target-elasticsearch?color=3438BF&label=PyPI%20Downloads&)
+![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg)
+![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/release.yml/badge.svg)
 
 `target-elasticsearch` is a Singer target for [Elastic](https://www.elastic.co/).
 

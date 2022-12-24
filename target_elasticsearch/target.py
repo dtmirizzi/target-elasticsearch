@@ -84,10 +84,14 @@ class TargetElasticsearch(Target):
             INDEX_FORMAT,
             th.StringType,
             description="can be used to handle custom index formatting such as specifying `-latest` index. Default "
-            "options: Daily `{{ current_timestamp_daily }}`, Monthly `{{ current_timestamp_monthly }}`, "
-            "or Yearly `{{ current_timestamp_yearly }}`. You should use fields specified in "
-            "`index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}` . There are also helper "
-            "fuctions such as {{ to_daily(timestamp) }}",
+            "options: \n\n"
+            "Daily `{{ current_timestamp_daily }}`, \n "
+            "Monthly `{{ current_timestamp_monthly }}`, \n"
+            "or Yearly `{{ current_timestamp_yearly }}`. "
+            "You should use fields specified in "
+            "`index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}` . "
+            "There are also helper functions such as {{ to_daily(timestamp) }},"
+            "{{ to_monthly(timestamp) }} or {{ to_yearly(timestamp) }}",
             default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
         th.Property(

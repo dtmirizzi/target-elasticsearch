@@ -1,4 +1,4 @@
-name: Build and Release target-elasticsearch
+name: release
 
 on:
   push:
