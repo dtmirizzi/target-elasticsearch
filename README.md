@@ -2,6 +2,7 @@
 
 ![](https://img.shields.io/badge/Maintenance%20Status-Prerelease%20(Beta)-yellow)
 ![](https://img.shields.io/pypi/dm/target-elasticsearch?color=3438BF&label=PyPI%20Downloads&)
+![](https://img.shields.io/pypi/v/target-elasticsearch?color=3438BF&label=PyPI%20Package%20Version&)
 ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg)
 ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/release.yml/badge.svg)
 
