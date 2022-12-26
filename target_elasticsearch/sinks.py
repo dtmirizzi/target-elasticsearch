@@ -4,6 +4,7 @@ import jinja2
 from typing import List, Dict, Optional, Union, Any, Tuple, Set
 
 import jsonpath_ng
+import singer_sdk.io_base
 from elasticsearch.helpers import bulk
 from singer_sdk import PluginBase
 from singer_sdk.sinks import BatchSink
@@ -32,6 +33,65 @@ from target_elasticsearch.common import (
 )
 
 
+def template_index(stream_name: str, index_format: str, schemas: Dict) -> str:
+    """
+    _index templates the input index config to be used for elasticsearch indexing
+    currently it operates using current time as index.
+    this may not be optimal and additional support can be added to parse @timestamp out and use it in index
+    templating depending on how your elastic instance is configured.
+    @param stream_name:
+    @param index_format:
+    @param schemas:
+    @return: str
+    """
+    today = datetime.date.today()
+    arguments = {
+        "stream_name": stream_name,
+        "current_timestamp_daily": today.strftime(ELASTIC_DAILY_FORMAT),
+        "current_timestamp_monthly": today.strftime(ELASTIC_MONTHLY_FORMAT),
+        "current_timestamp_yearly": today.strftime(ELASTIC_YEARLY_FORMAT),
+        "to_daily": to_daily,
+        "to_monthly": to_monthly,
+        "to_yearly": to_yearly,
+    } | schemas
+    environment = jinja2.Environment()
+    template = environment.from_string(index_format)
+    return template.render(**arguments).replace("_", "-")
+
+
+def build_fields(
+    stream_name: str,
+    mapping: Dict,
+    record: Dict[str, Union[str, Dict[str, str], int]],
+    logger: singer_sdk.io_base.logger,
+) -> dict:
+    """
+    build_fields parses records for supplied mapping to be used later in index templating and ecs metadata field formulation
+    @param logger:
+    @param stream_name:
+    @param mapping: dict
+    @param record:  str
+    @return: dict
+    """
+    schemas = {}
+    if stream_name in mapping:
+        logger.debug(INDEX_TEMPLATE_FIELDS, ": ", mapping[stream_name])
+        for k, v in mapping[stream_name].items():
+            match = jsonpath_ng.parse(v).find(record)
+            if len(match) == 0:
+                logger.warning(
+                    f"schema key {k} with json path {v} could not be found in record: {record}"
+                )
+                schemas[k] = v
+            else:
+                if len(match) < 1:
+                    logger.warning(
+                        f"schema key {k} with json path {v} has multiple associated fields, may cause side effects"
+                    )
+                schemas[k] = match[0].value
+    return schemas
+
+
 class ElasticSink(BatchSink):
     """ElasticSink target sink class."""
 
@@ -47,58 +107,8 @@ class ElasticSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         self.client = self._authenticated_client()
 
-    def template_index(self, schemas: Dict) -> str:
-        """
-        _index templates the input index config to be used for elasticsearch indexing
-        currently it operates using current time as index.
-        this may not be optimal and additional support can be added to parse @timestamp out and use it in index
-        templating depending on how your elastic instance is configured.
-        @param schemas:
-        @return: str
-        """
-        today = datetime.date.today()
-        arguments = {
-            "stream_name": self.stream_name,
-            "current_timestamp_daily": today.strftime(ELASTIC_DAILY_FORMAT),
-            "current_timestamp_monthly": today.strftime(ELASTIC_MONTHLY_FORMAT),
-            "current_timestamp_yearly": today.strftime(ELASTIC_YEARLY_FORMAT),
-            "to_daily": to_daily,
-            "to_monthly": to_monthly,
-            "to_yearly": to_yearly,
-        } | schemas
-        environment = jinja2.Environment()
-        template = environment.from_string(self.config[INDEX_FORMAT])
-        return template.render(**arguments).replace("_", "-")
-
-    def build_fields(self, mapping: Dict, record: str) -> dict:
-        """
-        build_fields parses records for supplied mapping to be used later in index templating and ecs metadata field formulation
-        @param mapping: dict
-        @param record:  str
-        @return: dict
-        """
-        schemas = {}
-        if self.stream_name in mapping:
-            self.logger.debug(INDEX_TEMPLATE_FIELDS, ": ", mapping[self.stream_name])
-            for k, v in mapping[self.stream_name].items():
-                expression = jsonpath_ng.parse(v)
-                match = expression.find(record)
-                if len(match) == 0:
-                    self.logger.warning(
-                        f"schema key {k} with json path {v} could not be found for record"
-                    )
-                    schemas[k] = v
-                else:
-                    if len(match) < 1:
-                        self.logger.warning(
-                            f"schema key {k} with json path {v} has multiple associated fields, not "
-                            f"valid json"
-                        )
-                    schemas[k] = match[0].value
-        return schemas
-
     def build_request_body_and_distinct_indices(
-        self, records: List[str]
+        self, records: List[Dict[str, Union[str, Dict[str, str], int]]]
     ) -> Tuple[List[Dict[Union[str, Any], Union[str, Any]]], Set[str]]:
         """
         build_request_body_and_distinct_indices builds the bulk request body
@@ -116,11 +126,15 @@ class ElasticSink(BatchSink):
             metadata_fields = self.config[METADATA_FIELDS]
 
         for r in records:
-            index = self.template_index(self.build_fields(index_mapping, r))
+            index = template_index(
+                self.stream_name,
+                self.config[INDEX_FORMAT],
+                build_fields(self.stream_name, index_mapping, r, self.logger),
+            )
             distinct_indices.add(index)
             updated_records.append(
                 {"_op_type": "index", "_index": index, "_source": r}
-                | self.build_fields(metadata_fields, r)
+                | build_fields(self.stream_name, metadata_fields, r, self.logger)
             )
 
         return updated_records, distinct_indices
@@ -139,7 +153,9 @@ class ElasticSink(BatchSink):
                 else:  # Other exception - raise it
                     raise e
 
-    def build_body(self, records: List[str]) -> list[dict[Union[str, Any], Union[str, Any]]]:
+    def build_body(
+        self, records: List[Dict[str, Union[str, Dict[str, str], int]]]
+    ) -> list[dict[Union[str, Any], Union[str, Any]]]:
         """
         build_body constructs the bulk message body and creates all necessary indices if needed
         @param records: str
