@@ -50,19 +50,6 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        ## Change to es
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     env:
       python-version: "3.9"
     steps:
@@ -76,7 +63,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install meltano
         meltano install
-    # TODO figure out smoke test connection issues
     - name: smoke-test-tap
       run: |
         docker-compose up -d elasticsearch
