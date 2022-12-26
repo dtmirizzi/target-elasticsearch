@@ -46,14 +46,17 @@ def template_index(stream_name: str, index_format: str, schemas: Dict) -> str:
     """
     today = datetime.date.today()
     arguments = {
-        "stream_name": stream_name,
-        "current_timestamp_daily": today.strftime(ELASTIC_DAILY_FORMAT),
-        "current_timestamp_monthly": today.strftime(ELASTIC_MONTHLY_FORMAT),
-        "current_timestamp_yearly": today.strftime(ELASTIC_YEARLY_FORMAT),
-        "to_daily": to_daily,
-        "to_monthly": to_monthly,
-        "to_yearly": to_yearly,
-    } | schemas
+        **{
+            "stream_name": stream_name,
+            "current_timestamp_daily": today.strftime(ELASTIC_DAILY_FORMAT),
+            "current_timestamp_monthly": today.strftime(ELASTIC_MONTHLY_FORMAT),
+            "current_timestamp_yearly": today.strftime(ELASTIC_YEARLY_FORMAT),
+            "to_daily": to_daily,
+            "to_monthly": to_monthly,
+            "to_yearly": to_yearly,
+        },
+        **schemas,
+    }
     environment = jinja2.Environment()
     template = environment.from_string(index_format)
     return template.render(**arguments).replace("_", "-")
@@ -133,8 +136,10 @@ class ElasticSink(BatchSink):
             )
             distinct_indices.add(index)
             updated_records.append(
-                {"_op_type": "index", "_index": index, "_source": r}
-                | build_fields(self.stream_name, metadata_fields, r, self.logger)
+                {
+                    **{"_op_type": "index", "_index": index, "_source": r},
+                    **build_fields(self.stream_name, metadata_fields, r, self.logger),
+                }
             )
 
         return updated_records, distinct_indices
