@@ -155,7 +155,7 @@ class ElasticSink(BatchSink):
 
     def build_body(
         self, records: List[Dict[str, Union[str, Dict[str, str], int]]]
-    ) -> list[dict[Union[str, Any], Union[str, Any]]]:
+    ) -> List[dict[Union[str, Any], Union[str, Any]]]:
         """
         build_body constructs the bulk message body and creates all necessary indices if needed
         @param records: str
