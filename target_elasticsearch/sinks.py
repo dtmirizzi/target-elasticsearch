@@ -64,7 +64,7 @@ def build_fields(
     mapping: Dict,
     record: Dict[str, Union[str, Dict[str, str], int]],
     logger: singer_sdk.io_base.logger,
-) -> dict:
+) -> Dict:
     """
     build_fields parses records for supplied mapping to be used later in index templating and ecs metadata field formulation
     @param logger:
@@ -155,7 +155,7 @@ class ElasticSink(BatchSink):
 
     def build_body(
         self, records: List[Dict[str, Union[str, Dict[str, str], int]]]
-    ) -> List[dict[Union[str, Any], Union[str, Any]]]:
+    ) -> List[Dict[Union[str, Any], Union[str, Any]]]:
         """
         build_body constructs the bulk message body and creates all necessary indices if needed
         @param records: str
