@@ -76,8 +76,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install meltano
         meltano install
-        docker-compose up -d elasticsearch
     # TODO figure out smoke test connection issues
-    #- name: smoke-test-tap
-    #  run: |
-    #    meltano run tap-smoke-test target-elasticsearch
+    - name: smoke-test-tap
+      run: |
+        docker-compose up -d elasticsearch
+        sleep 10
+        meltano run tap-smoke-test target-elasticsearch
