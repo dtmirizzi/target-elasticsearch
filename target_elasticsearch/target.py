@@ -83,30 +83,43 @@ class TargetElasticsearch(Target):
         th.Property(
             INDEX_FORMAT,
             th.StringType,
-            description="can be used to handle custom index formatting such as specifying `-latest` index. Default "
-            "options: \n\n"
-            "Daily `{{ current_timestamp_daily }}`, \n "
-            "Monthly `{{ current_timestamp_monthly }}`, \n"
-            "or Yearly `{{ current_timestamp_yearly }}`. "
-            "You should use fields specified in "
-            "`index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}` . "
-            "There are also helper functions such as {{ to_daily(timestamp) }},"
-            "{{ to_monthly(timestamp) }} or {{ to_yearly(timestamp) }}",
+            description="""Index Format is used to handle custom index formatting such as specifying `-latest` index.
+    ie. the default index string defined as:
+    `ecs-{{ stream_name }}-{{ current_timestamp_daily}}` -> `ecs-animals-2022-12-25` where the stream name was animals
+
+    Default options:
+    Daily `{{ current_timestamp_daily }}` -> 2022-12-25,
+    Monthly `{{ current_timestamp_monthly }}`->  2022-12,
+    Yearly `{{ current_timestamp_yearly }}` -> 2022.
+    You can also use fields mapped in `index_schema_fields` such as `{{ x }}` or `{{ timestamp }}`.
+
+    There are also helper functions such as:
+    to daily `{{ to_daily(timestamp) }}`,
+    to monthly `{{ to_monthly(timestamp) }}`,
+    to yearly `{{ to_yearly(timestamp) }}`
+            """,
             default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
         th.Property(
             INDEX_TEMPLATE_FIELDS,
             th.ObjectType(),
-            description="this id map allows you to specify specific record values via jsonpath from the stream to be "
-            "used in index formulation.",
+            description="""Index Schema Fields allows you to specify specific record values via jsonpath
+    from the stream to be used in index formulation.
+    ie. if the stream record looks like `{"id": "1", "created_at": "12-13-202000:01:43Z"}`
+    and we want to index the record via create time.
+    we could specify a mapping like `index_timestamp: created_at`
+    in the `index_format` we could use a template like `ecs-animals-{{ to_daily(index_timestamp) }}`
+    this would put this record onto the index  `ecs-animals-2020-12-13`""",
             default=None,
         ),
         th.Property(
             METADATA_FIELDS,
             th.ObjectType(),
-            description="this should be used to pull out specific fields via jsonpath to be used on for [ecs metadata "
-            "patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html"
-            ")",
+            description="""Metadata Fields can be used to pull out specific fields via jsonpath to be
+    used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)
+    This would best be used for data that has a primary key.
+    ie. `{"guid": 102, "foo": "bar"}`
+    then create a mapping of `_id: guid""",
             default=None,
         ),
     ).to_dict()
