@@ -66,5 +66,5 @@ jobs:
     - name: smoke-test-tap
       run: |
         docker-compose up -d elasticsearch
-        sleep 10
+        sleep 30
         meltano run tap-smoke-test target-elasticsearch
