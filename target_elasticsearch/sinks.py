@@ -1,11 +1,13 @@
 import elasticsearch
+import opensearchpy
 import jinja2
 
 from typing import List, Dict, Optional, Union, Any, Tuple, Set
 
 import jsonpath_ng
 import singer_sdk.io_base
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import bulk as elasticsearch_bulk
+from opensearchpy.helpers import bulk as opensearch_bulk
 from singer_sdk import PluginBase
 from singer_sdk.sinks import BatchSink
 
@@ -27,6 +29,8 @@ from target_elasticsearch.common import (
     ELASTIC_MONTHLY_FORMAT,
     ELASTIC_DAILY_FORMAT,
     METADATA_FIELDS,
+    SINK_TYPE,
+    OPENSEARCH_SINK,
     to_daily,
     to_monthly,
     to_yearly,
@@ -170,7 +174,7 @@ class ElasticSink(BatchSink):
         self.create_indices(distinct_indices)
         return updated_records
 
-    def _authenticated_client(self) -> elasticsearch.Elasticsearch:
+    def _authenticated_client(self) -> Any:
         """
         _authenticated_client generates a newly authenticated elasticsearch client
         attempting to support all auth permutations and ssl concerns
@@ -194,6 +198,9 @@ class ElasticSink(BatchSink):
         else:
             self.logger.info("using default elastic search connection config")
 
+        if self.config[SINK_TYPE] == OPENSEARCH_SINK:
+            return opensearchpy.OpenSearch(**config)
+
         return elasticsearch.Elasticsearch(**config)
 
     def write_output(self, records):
@@ -206,7 +213,10 @@ class ElasticSink(BatchSink):
         records = self.build_body(records)
         self.logger.debug(records)
         try:
-            bulk(self.client, records)
+            if self.config[SINK_TYPE] == OPENSEARCH_SINK:
+                opensearch_bulk(self.client, records)
+            else:
+                elasticsearch_bulk(self.client, records)
         except elasticsearch.helpers.BulkIndexError as e:
             self.logger.error(e.errors)
 
@@ -224,4 +234,7 @@ class ElasticSink(BatchSink):
         clean_up closes the elasticsearch client
         """
         self.logger.debug(f"Cleaning up sink for {self.stream_name}")
-        self.client.close()
+        try:
+            self.client.close()
+        except Exception as e:
+            self.logger.error(f"failed to close {self.config[SINK_TYPE]} client", e)

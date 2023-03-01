@@ -16,6 +16,9 @@ SSL_CA_FILE = "ssl_ca_file"
 INDEX_FORMAT = "index_format"
 INDEX_TEMPLATE_FIELDS = "index_schema_fields"
 METADATA_FIELDS = "metadata_fields"
+SINK_TYPE = "sink_type"
+ELASTICSEARCH_SINK = "elasticsearch"
+OPENSEARCH_SINK = "opensearch"
 
 
 def to_daily(date) -> str:

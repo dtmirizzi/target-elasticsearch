@@ -15,6 +15,7 @@ from target_elasticsearch.common import (
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     METADATA_FIELDS,
+    SINK_TYPE,
 )
 
 
@@ -121,6 +122,12 @@ class TargetElasticsearch(Target):
     ie. `{"guid": 102, "foo": "bar"}`
     then create a mapping of `_id: guid""",
             default=None,
+        ),
+        th.Property(
+            SINK_TYPE,
+            th.ObjectType(),
+            description="The sink type to use for this target. currently only `elasticsearch` and  `opensearch` are supported",
+            default="elasticsearch",
         ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
