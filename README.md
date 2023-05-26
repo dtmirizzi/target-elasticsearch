@@ -92,12 +92,9 @@ You can also test the `target-elasticsearch` CLI interface directly using `poetr
 poetry run target_elasticsearch --help
 ```
 
-### Testing with [Meltano](https://www.meltano.com)
+## Contributing
 
-_**Note:** This tap will work in any Singer environment and does not require Meltano.
-Examples here are for convenience and to streamline end-to-end orchestration scenarios._
-
-Your project comes with a custom `meltano.yml` project file already created.
+Your project comes with a custom `meltano.yml` project file already created. This should be used for testing your changes. 
 
 Next, install Meltano (if you haven't already) and any needed plugins:
 
