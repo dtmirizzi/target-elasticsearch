@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "target-elasticsearch"
-version = "0.1.0"
+version = "1.0.2"
 description = "`target-elasticsearch` is a singer target using the meltano SDK for targets"
 authors = ["DT Mirizzi <dtmirizzi@gmail.com>"]
 keywords = [
@@ -14,7 +14,7 @@ license = "GNU v3"
 
 
 [tool.poetry.dependencies]
-python = "<3.12,>=3.7.1"
+python = "<3.12,>=3.9.1"
 requests = "^2.25.1"
 singer-sdk = ">=0.22.0,<0.23.0"
 elasticsearch = "^8.5.2"
