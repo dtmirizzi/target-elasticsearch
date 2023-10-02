@@ -4,6 +4,8 @@
 ![](https://img.shields.io/pypi/dm/target-elasticsearch?color=3438BF&label=PyPI%20Downloads&)
 ![](https://img.shields.io/pypi/v/target-elasticsearch?color=3438BF&label=PyPI%20Package%20Version&)
 ![](https://github.com/dtmirizzi/target-elasticsearch/actions/workflows/ci_workflow.yml/badge.svg)
+![](https://img.shields.io/badge/Total%20Executions%20(Last%203%20Months)-1,052-c0c0c4)
+![](https://img.shields.io/badge/Projects%20(Last%203%20Months)-10-c0c0c4)
 
 `target-elasticsearch` is a Singer target for [Elastic](https://www.elastic.co/).
 
@@ -53,11 +55,16 @@ tap is available by running:
 target_elasticsearch --about
 ```
 
-### Source Authentication and Authorization
+### Targey Authentication and Authorization
 
 
 You can easily run `target-elasticsearch` by itself or in a pipeline using [Meltano](https://meltano.com/).
 
+There are 4 types of auth supported by this target:
+- Basic Auth
+- Access Token
+- Bearer Token
+- SSL Based
 
 ### Executing the Tap Directly
 
