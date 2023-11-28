@@ -21,6 +21,7 @@ from target_elasticsearch.common import (
     BEARER_TOKEN,
     API_KEY_ID,
     API_KEY,
+    ENCODED_API_KEY,
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     ELASTIC_YEARLY_FORMAT,
@@ -189,6 +190,8 @@ class ElasticSink(BatchSink):
             config["basic_auth"] = (self.config[USERNAME], self.config[PASSWORD])
         elif API_KEY in self.config and API_KEY_ID in self.config:
             config["api_key"] = (self.config[API_KEY_ID], self.config[API_KEY])
+        elif ENCODED_API_KEY in self.config:
+            config["api_key"] = self.config[ENCODED_API_KEY]
         elif BEARER_TOKEN in self.config:
             config["bearer_auth"] = self.config[BEARER_TOKEN]
         else:

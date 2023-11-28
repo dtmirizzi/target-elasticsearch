@@ -12,6 +12,7 @@ from target_elasticsearch.common import (
     BEARER_TOKEN,
     API_KEY_ID,
     API_KEY,
+    ENCODED_API_KEY,
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     METADATA_FIELDS,
@@ -72,6 +73,12 @@ class TargetElasticsearch(Target):
             API_KEY,
             th.StringType,
             description="api key for auth key authorization",
+            default=None,
+        ),
+        th.Property(
+            ENCODED_API_KEY,
+            th.StringType,
+            description="Encoded api key for auth key authorization",
             default=None,
         ),
         th.Property(
