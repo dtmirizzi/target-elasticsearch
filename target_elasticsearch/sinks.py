@@ -28,6 +28,7 @@ from target_elasticsearch.common import (
     ELASTIC_MONTHLY_FORMAT,
     ELASTIC_DAILY_FORMAT,
     METADATA_FIELDS,
+    NAME,
     to_daily,
     to_monthly,
     to_yearly,
@@ -197,6 +198,8 @@ class ElasticSink(BatchSink):
         else:
             self.logger.info("using default elastic search connection config")
 
+        config["headers"] = {"user-agent": self._elasticsearch_user_agent()}
+
         return elasticsearch.Elasticsearch(**config)
 
     def write_output(self, records):
@@ -228,3 +231,9 @@ class ElasticSink(BatchSink):
         """
         self.logger.debug(f"Cleaning up sink for {self.stream_name}")
         self.client.close()
+
+    def _elasticsearch_user_agent(self) -> str:
+        """
+        Returns a user agent string for the elasticsearch client
+        """
+        return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"

@@ -17,6 +17,7 @@ SSL_CA_FILE = "ssl_ca_file"
 INDEX_FORMAT = "index_format"
 INDEX_TEMPLATE_FIELDS = "index_schema_fields"
 METADATA_FIELDS = "metadata_fields"
+NAME = "target-elasticsearch"
 
 
 def to_daily(date) -> str:
