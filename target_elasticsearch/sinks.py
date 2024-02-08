@@ -236,4 +236,4 @@ class ElasticSink(BatchSink):
         """
         Returns a user agent string for the elasticsearch client
         """
-        return f"meltano-singer-elasticsearch/{PluginBase._get_package_version(NAME)}"
+        return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"
