@@ -138,15 +138,15 @@ class ElasticSink(BatchSink):
             )
             distinct_indices.add(index)
             
-            id_field = retrieve_id_field(r)
-            if id_field != "":
+            doc_id = self.build_doc_id(r)
+            if doc_id != "":
                 # Upsert logic:
                 # ctx.op == create => If the document does not exist, insert r including _sdc_sequence
                 # Else, if the document exists, update with all fields from r except _sdc_sequence
                 updated_records.append({
                     "_op_type": "update",
                     "_index": index,
-                    "_id": r[id_field],
+                    "_id": doc_id,
                     "scripted_upsert": True,
                     "script": {
                         "source": """
@@ -273,9 +273,15 @@ class ElasticSink(BatchSink):
         """
         return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"
 
-    def retrieve_id_field(r: Dict[str, Union[str, Dict[str, str], int]]) -> str:
-        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx"]
+    def build_doc_id(self, r: Dict[str, Union[str, Dict[str, str], int]]) -> str:
+        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx", "client_msg_id", "ts"]
         for id_field in id_fields:
             if id_field in r:
-                return id_field
+                return r[id_field]
+            
+        combined_fields = [("member_id", "channel_id")]
+        for id_tuple in combined_fields:
+            if False not in [x in id_fields for x in id_tuple]:
+                return "-".join([id_fields[x] for x in id_tuple])
+            
         return ""
