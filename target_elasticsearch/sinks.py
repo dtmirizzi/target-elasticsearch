@@ -137,12 +137,47 @@ class ElasticSink(BatchSink):
                 build_fields(self.stream_name, index_mapping, r, self.logger),
             )
             distinct_indices.add(index)
-            updated_records.append(
-                {
-                    **{"_op_type": "index", "_index": index, "_source": r},
-                    **build_fields(self.stream_name, metadata_fields, r, self.logger),
-                }
-            )
+            
+            id_field = retrieve_id_field(r)
+            if id_field != "":
+                # Upsert logic:
+                # ctx.op == create => If the document does not exist, insert r including _sdc_sequence
+                # Else, if the document exists, update with all fields from r except _sdc_sequence
+                updated_records.append({
+                    "_op_type": "update",
+                    "_index": index,
+                    "_id": r[id_field],
+                    "scripted_upsert": True,
+                    "script": {
+                        "source": """
+                        if (ctx.op == 'create') {
+                            ctx._source.putAll(params.r);
+                        } else {
+                            for (entry in params.r.entrySet()) {
+                                if (!entry.getKey().equals('_sdc_sequence')) { // Skip _sdc_sequence field
+                                    ctx._source.put(entry.getKey(), entry.getValue());
+                                }
+                            }
+                        }
+                        """,
+                        "lang": "painless",
+                        "params": {
+                            "r": {
+                                **r,
+                                **build_fields(self.stream_name, metadata_fields, r, self.logger)
+                            }
+                        }
+                    },
+                    "upsert": {}  # Empty document for upsert; actual content is managed by the script
+                })
+            else:
+                # Default insertion
+                updated_records.append(
+                    {
+                        **{"_op_type": "index", "_index": index, "_source": r},
+                        **build_fields(self.stream_name, metadata_fields, r, self.logger),
+                    }
+                )
 
         return updated_records, distinct_indices
 
@@ -237,3 +272,10 @@ class ElasticSink(BatchSink):
         Returns a user agent string for the elasticsearch client
         """
         return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"
+
+    def retrieve_id_field(r: Dict[str, Union[str, Dict[str, str], int]]) -> str:
+        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx"]
+        for id_field in id_fields:
+            if id_field in r:
+                return id_field
+        return ""
