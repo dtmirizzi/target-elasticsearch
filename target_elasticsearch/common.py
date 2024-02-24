@@ -18,6 +18,11 @@ INDEX_FORMAT = "index_format"
 INDEX_TEMPLATE_FIELDS = "index_schema_fields"
 METADATA_FIELDS = "metadata_fields"
 NAME = "target-elasticsearch"
+PREFERRED_PKEY = {
+    "channel_members": ("member_id", "channel_id"),
+    "messages": ("client_msg_id"),
+    "threads": ("client_msg_id")
+}
 
 
 def to_daily(date) -> str:

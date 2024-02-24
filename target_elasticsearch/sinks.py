@@ -29,6 +29,7 @@ from target_elasticsearch.common import (
     ELASTIC_DAILY_FORMAT,
     METADATA_FIELDS,
     NAME,
+    PREFERRED_PKEY,
     to_daily,
     to_monthly,
     to_yearly,
@@ -138,7 +139,7 @@ class ElasticSink(BatchSink):
             )
             distinct_indices.add(index)
             
-            doc_id = self.build_doc_id(r)
+            doc_id = self.build_doc_id(self.stream_name, r)
             if doc_id != "":
                 # Upsert logic:
                 # ctx.op == create => If the document does not exist, insert r including _sdc_sequence
@@ -273,15 +274,17 @@ class ElasticSink(BatchSink):
         """
         return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"
 
-    def build_doc_id(self, r: Dict[str, Union[str, Dict[str, str], int]]) -> str:
-        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx", "client_msg_id", "ts"]
+    def build_doc_id(self, stream_name: str, r: Dict[str, Union[str, Dict[str, str], int]]) -> str:
+        # 1. Explicitly handled cases
+        if stream_name in PREFERRED_PKEY:
+            if False not in [x in r for x in PREFERRED_PKEY[stream_name]]:
+                return "-".join([str(r[x]) for x in PREFERRED_PKEY[stream_name]])
+
+        # 2. Best effort to avoid duplicates:
+        # In descending priority, try to match a field which looks like a primary key
+        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx", "key", "ts"]
         for id_field in id_fields:
             if id_field in r:
                 return r[id_field]
-            
-        combined_fields = [("member_id", "channel_id")]
-        for id_tuple in combined_fields:
-            if False not in [x in id_fields for x in id_tuple]:
-                return "-".join([id_fields[x] for x in id_tuple])
             
         return ""
