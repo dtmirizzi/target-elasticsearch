@@ -16,6 +16,10 @@ from target_elasticsearch.common import (
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     METADATA_FIELDS,
+    CHECK_DIFF,
+    STREAM_NAME,
+    EVENT_TIME_KEY,
+    IGNORED_FIELDS,
 )
 
 
@@ -128,6 +132,28 @@ class TargetElasticsearch(Target):
     ie. `{"guid": 102, "foo": "bar"}`
     then create a mapping of `_id: guid""",
             default=None,
+        ),
+        th.Property(
+            CHECK_DIFF,
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property(
+                        STREAM_NAME, 
+                        th.StringType,
+                        description="stream name for which you wish to build a diff index"),
+                    th.Property(
+                        EVENT_TIME_KEY, 
+                        th.StringType,
+                        description="document key which should be used for the event's timestamp"),
+                    th.Property(
+                        IGNORED_FIELDS,
+                        th.ArrayType(th.StringType),
+                        description="list of keys (strings) which should be ignored when comparing old/new documents."),
+                )
+            ),
+            description="build diff event indexes for the streams included in this array",
+            default=[],
+            required=False,
         ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink

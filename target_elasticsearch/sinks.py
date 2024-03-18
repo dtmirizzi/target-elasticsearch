@@ -3,9 +3,11 @@ import jinja2
 
 from typing import List, Dict, Optional, Union, Any, Tuple, Set
 
+import re
 import jsonpath_ng
 import singer_sdk.io_base
 from elasticsearch.helpers import bulk
+from elasticsearch.exceptions import NotFoundError
 from singer_sdk import PluginBase
 from singer_sdk.sinks import BatchSink
 
@@ -30,6 +32,12 @@ from target_elasticsearch.common import (
     METADATA_FIELDS,
     NAME,
     PREFERRED_PKEY,
+    CHECK_DIFF,
+    STREAM_NAME,
+    EVENT_TIME_KEY,
+    IGNORED_FIELDS,
+    DEFAULT_IGNORED_FIELDS,
+    DIFF_SUFFIX,
     to_daily,
     to_monthly,
     to_yearly,
@@ -130,6 +138,8 @@ class ElasticSink(BatchSink):
             index_mapping = self.config[INDEX_TEMPLATE_FIELDS]
         if METADATA_FIELDS in self.config:
             metadata_fields = self.config[METADATA_FIELDS]
+    
+        diff_enabled = [elem for elem in self.config[CHECK_DIFF] if elem[STREAM_NAME] == self.stream_name]
 
         for r in records:
             index = template_index(
@@ -141,6 +151,18 @@ class ElasticSink(BatchSink):
             
             doc_id = self.build_doc_id(self.stream_name, r)
             if doc_id != "":
+                if len(diff_enabled) > 0:
+                    diff_event, ignore = self.process_diff_event(index, doc_id, r, diff_enabled[0])
+                    if not ignore:
+                        # Default insertion: no need for an update in the case of events
+                        self.logger.debug(f"Append event for stream {index+DIFF_SUFFIX}: {diff_event}")
+                        updated_records.append(
+                            {
+                                **{"_op_type": "index", "_index": index+DIFF_SUFFIX, "_source": diff_event, "_id": diff_event["id"]},
+                                **build_fields(self.stream_name+DIFF_SUFFIX, metadata_fields, diff_event, self.logger),
+                            }
+                        )
+
                 # Upsert logic:
                 # ctx.op == create => If the document does not exist, insert r including _sdc_sequence
                 # Else, if the document exists, update with all fields from r except _sdc_sequence
@@ -288,3 +310,66 @@ class ElasticSink(BatchSink):
                 return r[id_field]
             
         return ""
+    
+    def process_diff_event(self, main_index: str, doc_id: str, new_doc: Dict[str, str | Dict[str, str] | int], diff_config: Dict) -> Tuple[Dict, bool]:
+        # Raise an exception if the field does not exist in the doc
+        evt_time = new_doc.get(diff_config.get(EVENT_TIME_KEY))
+        ignored_fields = []
+        ignored_fields.extend(diff_config.get(IGNORED_FIELDS, []))
+        ignored_fields.extend(DEFAULT_IGNORED_FIELDS)
+
+        diff_event = {}
+        diff_event["id"] = f"{doc_id}-event-{evt_time}"
+        diff_event["main_doc_key"] = doc_id
+        diff_event["event_ts"] = evt_time
+        original_doc_exists = True
+        try:
+            res = self.client.get(index=main_index, id=doc_id)
+            original_doc = res["_source"]
+        except NotFoundError:
+            original_doc_exists = False
+        except Exception as e:
+            # Should not happen -> raise
+            self.logger.error(f"Error while fetching document {doc_id} from {main_index} in order to build diff: {e}")
+            raise e
+        
+        if not original_doc_exists:
+            original_doc = {}
+
+        diff_result = dict_diff(original_doc, new_doc, ignored_fields)
+        diff_event["from"] = diff_result["from"]
+        diff_event["to"] = diff_result["to"]
+
+        ignore = False
+        if len(diff_event["from"].keys()) == 0 and len(diff_event["to"].keys()) == 0:
+            ignore = True
+
+        diff_event = {k: v for k, v in diff_event.items() if v is not None and v is not ""}
+
+        return diff_event, ignore
+    
+
+def dict_diff(old, new, ignored_fields):
+    diff = {"from": {}, "to": {}}
+
+    all_keys = set(old.keys()) | set(new.keys())
+
+    for key in all_keys:
+        if any(re.match(pattern, key) for pattern in ignored_fields):
+            continue
+        if key in old and key in new:
+            # If the value is a dictionary, compare recursively
+            if isinstance(old[key], dict) and isinstance(new[key], dict):
+                nested_diff = dict_diff(old[key], new[key], ignored_fields)
+                if nested_diff["from"] or nested_diff["to"]:  # If there's a change
+                    diff["from"][key] = nested_diff["from"]
+                    diff["to"][key] = nested_diff["to"]
+            elif old[key] != new[key]:  # If the value has changed
+                diff["from"][key] = old[key]
+                diff["to"][key] = new[key]
+        elif key in new:  # If the key is an addition
+            diff["to"][key] = new[key]
+        elif key in old:  # If the key is a removal
+            diff["from"][key] = old[key]
+
+    return diff

@@ -6,8 +6,8 @@ ELASTIC_DAILY_FORMAT = "%Y.%m.%d"
 
 SCHEME = "scheme"
 HOST = "host"
-PORT = "port"
 USERNAME = "username"
+PORT = "port"
 PASSWORD = "password"
 BEARER_TOKEN = "bearer_token"
 API_KEY_ID = "api_key_id"
@@ -23,6 +23,20 @@ PREFERRED_PKEY = {
     "messages": ("client_msg_id"),
     "threads": ("client_msg_id")
 }
+CHECK_DIFF = "check_diff"
+DIFF_SUFFIX = "-diff-events"
+STREAM_NAME = "stream_name"
+EVENT_TIME_KEY = "event_time_key"
+IGNORED_FIELDS = "ignored_fields"
+DEFAULT_IGNORED_FIELDS = [
+    "createdAt",
+    "updatedAt",
+    "_sdc_extracted_at",
+    "_sdc_sequence",
+    "_sdc_batched_at",
+    "_sdc_received_at",
+    "_sdc_sync_started_at",
+]
 
 
 def to_daily(date) -> str:
