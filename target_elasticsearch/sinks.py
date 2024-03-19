@@ -29,6 +29,8 @@ from target_elasticsearch.common import (
     ELASTIC_DAILY_FORMAT,
     METADATA_FIELDS,
     NAME,
+    REQUEST_TIMEOUT,
+    RETRY_ON_TIMEOUT,
     to_daily,
     to_monthly,
     to_yearly,
@@ -186,6 +188,12 @@ class ElasticSink(BatchSink):
             config["ca_certs"] = self.config[SSL_CA_FILE]
 
         config["hosts"] = [f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"]
+
+        if REQUEST_TIMEOUT in self.config:
+            config["request_timeout"] = self.config[REQUEST_TIMEOUT]
+
+        if RETRY_ON_TIMEOUT in self.config:
+            config["retry_on_timeout"] = self.config[RETRY_ON_TIMEOUT]
 
         if USERNAME in self.config and PASSWORD in self.config:
             config["basic_auth"] = (self.config[USERNAME], self.config[PASSWORD])

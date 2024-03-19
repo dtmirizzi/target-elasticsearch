@@ -18,6 +18,11 @@ INDEX_FORMAT = "index_format"
 INDEX_TEMPLATE_FIELDS = "index_schema_fields"
 METADATA_FIELDS = "metadata_fields"
 NAME = "target-elasticsearch"
+REQUEST_TIMEOUT = "request_timeout"
+RETRY_ON_TIMEOUT = "retry_on_timeout"
+
+DEFAULT_REQUEST_TIMEOUT = 10
+DEFAULT_RETRY_ON_TIMEOUT = True
 
 
 def to_daily(date) -> str:

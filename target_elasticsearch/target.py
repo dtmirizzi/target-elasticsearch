@@ -16,6 +16,8 @@ from target_elasticsearch.common import (
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     METADATA_FIELDS,
+    REQUEST_TIMEOUT,
+    RETRY_ON_TIMEOUT,
 )
 
 
@@ -128,6 +130,18 @@ class TargetElasticsearch(Target):
     ie. `{"guid": 102, "foo": "bar"}`
     then create a mapping of `_id: guid""",
             default=None,
+        ),
+        th.Property(
+            REQUEST_TIMEOUT,
+            th.NumberType,
+            description="request timeout in seconds",
+            default=10,
+        ),
+        th.Property(
+            RETRY_ON_TIMEOUT,
+            th.BooleanType,
+            description="retry failed requests on timeout",
+            default=True,
         ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
