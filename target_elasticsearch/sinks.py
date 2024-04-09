@@ -376,6 +376,9 @@ class ElasticSink(BatchSink):
         diff_result = dict_diff(original_doc, new_doc, ignored_fields)
         diff_event["from"] = diff_result["from"]
         diff_event["to"] = diff_result["to"]
+        # Also include the full docs, to make future queries easier (it's slow if we need to access the original doc for context each time)
+        diff_event["original_doc"] = original_doc
+        diff_event["new_doc"] = new_doc
 
         ignore = False
         if len(diff_event["from"].keys()) == 0 and len(diff_event["to"].keys()) == 0:
