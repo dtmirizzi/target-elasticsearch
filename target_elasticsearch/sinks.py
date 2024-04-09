@@ -354,6 +354,11 @@ class ElasticSink(BatchSink):
         diff_event["id"] = f"{doc_id}-event-{evt_time}"
         diff_event["main_doc_key"] = doc_id
         diff_event["event_ts"] = evt_time
+        # Inherit the sdc sequence from the new doc
+        diff_event["_sdc_sequence"] = new_doc.get("_sdc_sequence")
+        diff_event["_sdc_extracted_at"] = new_doc.get("_sdc_extracted_at")
+        diff_event["_sdc_batched_at"] = new_doc.get("_sdc_batched_at")
+
         original_doc_exists = True
         try:
             res = self.client.get(index=main_index, id=doc_id)
