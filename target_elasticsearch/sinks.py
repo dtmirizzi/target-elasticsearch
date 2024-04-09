@@ -216,7 +216,17 @@ class ElasticSink(BatchSink):
         """
         for index in indices:
             try:
-                self.client.indices.create(index=index)
+                self.client.indices.create(
+                    index=index,
+                    settings={
+                        "index": {
+                            "mapping": {
+                                # Do not raise an error if the schema is not perfect - eg. empty string for a null date
+                                "ignore_malformed": True,
+                            }
+                        }
+                    }
+            )
             except elasticsearch.exceptions.RequestError as e:
                 if e.error == "resource_already_exists_exception":
                     self.logger.debug("index already created skipping creation")
