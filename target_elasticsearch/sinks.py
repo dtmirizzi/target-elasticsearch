@@ -223,6 +223,10 @@ class ElasticSink(BatchSink):
                             "mapping": {
                                 # Do not raise an error if the schema is not perfect - eg. empty string for a null date
                                 "ignore_malformed": True,
+                                "total_fields": {
+                                    # Default value is 1000, but diff events may get quite big
+                                    "limit": 2000
+                                }
                             }
                         }
                     }
@@ -377,7 +381,8 @@ class ElasticSink(BatchSink):
         diff_event["from"] = diff_result["from"]
         diff_event["to"] = diff_result["to"]
         # Also include the full docs, to make future queries easier (it's slow if we need to access the original doc for context each time)
-        diff_event["original_doc"] = original_doc
+        # However, only include the resulting doc because otherwise the diff doc would be too heavy!
+        # diff_event["original_doc"] = original_doc
         diff_event["new_doc"] = new_doc
 
         ignore = False
