@@ -139,8 +139,10 @@ class ElasticSink(BatchSink):
             index_mapping = self.config[INDEX_TEMPLATE_FIELDS]
         if METADATA_FIELDS in self.config:
             metadata_fields = self.config[METADATA_FIELDS]
-        diff_enabled = [elem for elem in self.config[CHECK_DIFF] if re.search(elem[STREAM_NAME], self.stream_name)]
-        self.logger.info(f"Diff enabled for stream {self.stream_name}:: {len(diff_enabled) > 0}")
+        diff_enabled = [elem for elem in self.config[CHECK_DIFF]
+                        if re.search(elem[STREAM_NAME], self.stream_name)]
+        self.logger.info(
+            f"Diff enabled for stream {self.stream_name}:: {len(diff_enabled) > 0}")
         for r in records:
             index = template_index(
                 self.stream_name,
@@ -148,7 +150,7 @@ class ElasticSink(BatchSink):
                 build_fields(self.stream_name, index_mapping, r, self.logger),
             )
             distinct_indices.add(index)
-            
+
             doc_id = self.build_doc_id(self.stream_name, r)
             if doc_id != "":
                 # Upsert logic:
@@ -196,12 +198,14 @@ class ElasticSink(BatchSink):
                 self.config[INDEX_FORMAT],
                 build_fields(self.stream_name, index_mapping, r, self.logger),
             )
+            distinct_indices.add(index+DIFF_SUFFIX)
             # Diff processing is something which can take a long time, as queries need to be made
             # -> Parallelize these checks
-            self.logger.info(f"Generate diff records based on the {len(records)} new records")
+            self.logger.info(
+                f"Generate diff records based on the {len(records)} new records")
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(self.process_main_records_make_diffs, record, index, diff_enabled, metadata_fields)
-                    for record in records]
+                           for record in records]
                 for future in concurrent.futures.as_completed(futures):
                     result = future.result()
                     if result is not None:
@@ -230,10 +234,11 @@ class ElasticSink(BatchSink):
                             }
                         }
                     }
-            )
+                )
             except elasticsearch.exceptions.RequestError as e:
                 if e.error == "resource_already_exists_exception":
-                    self.logger.debug("index already created skipping creation")
+                    self.logger.debug(
+                        "index already created skipping creation")
                 else:  # Other exception - raise it
                     raise e
 
@@ -245,7 +250,8 @@ class ElasticSink(BatchSink):
         @param records: str
         @return: list[dict[Union[str, Any], Union[str, Any]]]
         """
-        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(records)
+        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(
+            records)
         self.create_indices(distinct_indices)
         return updated_records
 
@@ -262,10 +268,12 @@ class ElasticSink(BatchSink):
             scheme = "https"
             config["ca_certs"] = self.config[SSL_CA_FILE]
 
-        config["hosts"] = [f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"]
+        config["hosts"] = [
+            f"{scheme}://{self.config[HOST]}:{self.config[PORT]}"]
 
         if USERNAME in self.config and PASSWORD in self.config:
-            config["basic_auth"] = (self.config[USERNAME], self.config[PASSWORD])
+            config["basic_auth"] = (
+                self.config[USERNAME], self.config[PASSWORD])
         elif API_KEY in self.config and API_KEY_ID in self.config:
             config["api_key"] = (self.config[API_KEY_ID], self.config[API_KEY])
         elif ENCODED_API_KEY in self.config:
@@ -289,6 +297,7 @@ class ElasticSink(BatchSink):
         records = self.build_body(records)
         self.logger.debug(records)
         try:
+            logger.info("About to bulk insert: ", len(records))
             bulk(self.client, records)
         except elasticsearch.helpers.BulkIndexError as e:
             self.logger.error(e.errors)
@@ -323,21 +332,24 @@ class ElasticSink(BatchSink):
 
         # 2. Best effort to avoid duplicates:
         # In descending priority, try to match a field which looks like a primary key
-        id_fields = ["id", "ID", "Id", "accountId", "sha", "hash", "node_id", "idx", "key", "ts"]
+        id_fields = ["id", "ID", "Id", "accountId",
+                     "sha", "hash", "node_id", "idx", "key", "ts"]
         for id_field in id_fields:
             if id_field in r:
                 return r[id_field]
-            
+
         return ""
-    
+
     def process_main_records_make_diffs(self, r, index, diff_enabled, metadata_fields):
         doc_id = self.build_doc_id(self.stream_name, r)
         if doc_id == "":
             return None
-        diff_event, ignore = self.process_diff_event(index, doc_id, r, diff_enabled[0])
+        diff_event, ignore = self.process_diff_event(
+            index, doc_id, r, diff_enabled[0])
         if not ignore:
             # Default insertion: no need for an update in the case of events
-            self.logger.debug(f"Append event for stream {index+DIFF_SUFFIX}: {diff_event}")
+            self.logger.debug(
+                f"Append event for stream {index+DIFF_SUFFIX}: {diff_event}")
             return {
                 **{"_op_type": "index", "_index": index+DIFF_SUFFIX, "_source": diff_event, "_id": diff_event["id"]},
                 **build_fields(self.stream_name+DIFF_SUFFIX, metadata_fields, diff_event, self.logger),
@@ -371,9 +383,10 @@ class ElasticSink(BatchSink):
             original_doc_exists = False
         except Exception as e:
             # Should not happen -> raise
-            self.logger.error(f"Error while fetching document {doc_id} from {main_index} in order to build diff: {e}")
+            self.logger.error(
+                f"Error while fetching document {doc_id} from {main_index} in order to build diff: {e}")
             raise e
-        
+
         if not original_doc_exists:
             original_doc = {}
 
@@ -389,10 +402,11 @@ class ElasticSink(BatchSink):
         if len(diff_event["from"].keys()) == 0 and len(diff_event["to"].keys()) == 0:
             ignore = True
 
-        diff_event = {k: v for k, v in diff_event.items() if v != None and v != ""}
+        diff_event = {k: v for k, v in diff_event.items() if v !=
+                      None and v != ""}
 
         return diff_event, ignore
-    
+
 
 def dict_diff(old, new, ignored_fields):
     diff = {"from": {}, "to": {}}
