@@ -16,6 +16,7 @@ from target_elasticsearch.common import (
     SSL_CA_FILE,
     INDEX_TEMPLATE_FIELDS,
     METADATA_FIELDS,
+    INDEX_MAPPINGS,
     REQUEST_TIMEOUT,
     RETRY_ON_TIMEOUT,
 )
@@ -129,6 +130,16 @@ class TargetElasticsearch(Target):
     This would best be used for data that has a primary key.
     ie. `{"guid": 102, "foo": "bar"}`
     then create a mapping of `_id: guid""",
+            default=None,
+        ),
+        th.Property(
+            INDEX_MAPPINGS,
+            th.ObjectType(),
+            description="""Index Mappings allows you to define field mappings for each stream/index.
+    This creates or updates the Elasticsearch index mapping with the specified field types and properties.
+    Format: {"stream_name": {"properties": {"field_name": {"type": "text", "analyzer": "standard"}}}}
+    Example: {"users": {"properties": {"email": {"type": "keyword"}, "created_at": {"type": "date"}}}}
+    See: https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html""",
             default=None,
         ),
         th.Property(

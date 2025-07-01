@@ -28,6 +28,7 @@ from target_elasticsearch.common import (
     ELASTIC_MONTHLY_FORMAT,
     ELASTIC_DAILY_FORMAT,
     METADATA_FIELDS,
+    INDEX_MAPPINGS,
     NAME,
     REQUEST_TIMEOUT,
     RETRY_ON_TIMEOUT,
@@ -86,9 +87,7 @@ def build_fields(
         for k, v in mapping[stream_name].items():
             match = jsonpath_ng.parse(v).find(record)
             if len(match) == 0:
-                logger.warning(
-                    f"schema key {k} with json path {v} could not be found in record: {record}"
-                )
+                logger.warning(f"schema key {k} with json path {v} could not be found in record: {record}")
                 schemas[k] = v
             else:
                 if len(match) < 1:
@@ -150,17 +149,25 @@ class ElasticSink(BatchSink):
 
     def create_indices(self, indices: Set[str]) -> None:
         """
-        create_indices creates elastic indices using cluster defaults
+        create_indices creates elastic indices using cluster defaults or configured mappings
         @param indices: set
         """
         for index in indices:
-            try:
-                self.client.indices.create(index=index)
-            except elasticsearch.exceptions.RequestError as e:
-                if e.error == "resource_already_exists_exception":
-                    self.logger.debug("index already created skipping creation")
-                else:  # Other exception - raise it
-                    raise e
+            self.logger.info(f"index mappings: {self.config.get(INDEX_MAPPINGS, {})}")
+            self.logger.debug(f"Creating index: {index} with mapping: {self.config.get(INDEX_MAPPINGS, {})}")
+            # Check if we have mapping configuration for this stream
+            if self.stream_name in self.config.get(INDEX_MAPPINGS, []):
+                # Use the new mapping method which handles both creation and updates
+                self.create_or_update_mapping(index)
+            else:
+                # Fallback to original behavior for indices without mapping configuration
+                try:
+                    self.client.indices.create(index=index)
+                except elasticsearch.exceptions.RequestError as e:
+                    if e.error == "resource_already_exists_exception":
+                        self.logger.debug("index already created skipping creation")
+                    else:  # Other exception - raise it
+                        raise e
 
     def build_body(
         self, records: List[Dict[str, Union[str, Dict[str, str], int]]]
@@ -245,3 +252,38 @@ class ElasticSink(BatchSink):
         Returns a user agent string for the elasticsearch client
         """
         return f"meltano-loader-elasticsearch/{PluginBase._get_package_version(NAME)}"
+
+    def create_or_update_mapping(self, index: str) -> None:
+        """
+        create_or_update_mapping creates or updates the mapping for an index based on the configuration
+        @param index: str - the index name to create/update mapping for
+        """
+        index_mappings = self.config[INDEX_MAPPINGS]
+
+        # Check if there's a mapping for this stream
+        mapping = index_mappings[self.stream_name]
+        self.logger.debug(f"Creating/updating mapping for index {index} with mapping: {mapping}")
+
+        try:
+            # Check if index exists
+            if self.client.indices.exists(index=index):
+                # Update mapping for existing index
+                self.client.indices.put_mapping(index=index, body=mapping)
+                self.logger.info(f"Updated mapping for existing index: {index}")
+            else:
+                # Create index with mapping
+                self.client.indices.create(index=index, body={"mappings": mapping})
+                self.logger.info(f"Created index with mapping: {index}")
+
+        except elasticsearch.exceptions.RequestError as e:
+            if e.error == "resource_already_exists_exception":
+                self.logger.debug(f"Index {index} already exists, attempting to update mapping")
+                try:
+                    self.client.indices.put_mapping(index=index, body=mapping)
+                    self.logger.info(f"Updated mapping for index: {index}")
+                except elasticsearch.exceptions.RequestError as update_error:
+                    self.logger.error(f"Failed to update mapping for index {index}: {update_error}")
+                    raise update_error
+            else:
+                self.logger.error(f"Failed to create index {index} with mapping: {e}")
+                raise e
