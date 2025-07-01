@@ -33,6 +33,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 | index_format        |  False   | ecs-{{ stream_name }}-{{ current_timestamp_daily }} | can be used to handle custom index formatting such as specifying `-latest` index. Default options: Daily `{{ current_timestamp_daily }}`, Monthly `{{ current_timestamp_monthly }}`, or Yearly `{{ current_timestamp_yearly }}`. You should use fields specified in `index_schema_fields` such as `{{ _id }}` or `{{ timestamp }}` . There are also helper fuctions such as {{ to_daily(timestamp) }}`. |
 | index_schema_fields |  False   |                        None                         | this id map allows you to specify specific record values via jsonpath from the stream to be used in index formulation.                                                                                                                                                                                                                                                                                  |
 | metadata_fields     |  false   |                        None                         | this should be used to pull out specific fields via jsonpath to be used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)                                                                                                                                                                                                              |
+| index_mappings      |  false   |                        None                         | Define field mappings for each stream/index. Creates or updates Elasticsearch index mappings with specified field types and properties. Format: `{"stream_name": {"properties": {"field_name": {"type": "text"}}}}`. See [MAPPING_EXAMPLES.md](./MAPPING_EXAMPLES.md) for detailed examples.                                                                                                              |
 | request_timeout     |  false   |                        10                         | increase timeout to send big butches of data [Elasticsearch connection arguments](https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html)                                                                                                                                                                                                              |
 | retry_on_timeout     |  false   |                        True                         | increase timeout to send big butches of data [Elasticsearch connection arguments](https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html)                                                                                                                                                                                                              |
 
@@ -57,7 +58,42 @@ tap is available by running:
 target_elasticsearch --about
 ```
 
-### Targey Authentication and Authorization
+### Index Mappings (NEW)
+
+The `index_mappings` configuration allows you to define field mappings for each stream/index, enabling:
+
+- **Better Performance**: Proper field types improve query performance
+- **Storage Optimization**: Appropriate field types reduce storage requirements  
+- **Enhanced Search**: Text analysis and keyword fields enable better search capabilities
+- **Data Integrity**: Field types enforce data consistency
+
+#### Example Configuration
+
+```yaml
+config:
+  # ... other settings ...
+  index_mappings:
+    users:
+      properties:
+        email:
+          type: keyword
+        created_at:
+          type: date
+        full_name:
+          type: text
+          analyzer: standard
+    orders:
+      properties:
+        order_id:
+          type: keyword
+        total_amount:
+          type: scaled_float
+          scaling_factor: 100
+```
+
+For detailed examples and advanced usage, see [MAPPING_EXAMPLES.md](./MAPPING_EXAMPLES.md).
+
+### Target Authentication and Authorization
 
 
 You can easily run `target-elasticsearch` by itself or in a pipeline using [Meltano](https://meltano.com/).
