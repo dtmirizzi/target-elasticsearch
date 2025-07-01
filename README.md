@@ -63,7 +63,7 @@ target_elasticsearch --about
 The `index_mappings` configuration allows you to define field mappings for each stream/index, enabling:
 
 - **Better Performance**: Proper field types improve query performance
-- **Storage Optimization**: Appropriate field types reduce storage requirements  
+- **Storage Optimization**: Appropriate field types reduce storage requirements
 - **Enhanced Search**: Text analysis and keyword fields enable better search capabilities
 - **Data Integrity**: Field types enforce data consistency
 

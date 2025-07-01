@@ -87,7 +87,9 @@ def build_fields(
         for k, v in mapping[stream_name].items():
             match = jsonpath_ng.parse(v).find(record)
             if len(match) == 0:
-                logger.warning(f"schema key {k} with json path {v} could not be found in record: {record}")
+                logger.warning(
+                    f"schema key {k} with json path {v} could not be found in record: {record}"
+                )
                 schemas[k] = v
             else:
                 if len(match) < 1:
@@ -154,7 +156,9 @@ class ElasticSink(BatchSink):
         """
         for index in indices:
             self.logger.info(f"index mappings: {self.config.get(INDEX_MAPPINGS, {})}")
-            self.logger.debug(f"Creating index: {index} with mapping: {self.config.get(INDEX_MAPPINGS, {})}")
+            self.logger.debug(
+                f"Creating index: {index} with mapping: {self.config.get(INDEX_MAPPINGS, {})}"
+            )
             # Check if we have mapping configuration for this stream
             if self.stream_name in self.config.get(INDEX_MAPPINGS, []):
                 # Use the new mapping method which handles both creation and updates
