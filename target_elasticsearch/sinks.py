@@ -76,7 +76,7 @@ class ElasticSink(BatchSink):
         }
         environment = jinja2.Environment()
         template = environment.from_string(self.config["index_format"])
-        return re.sub("[^A-Za-z0-9]+", "", template.render(**arguments).replace("_", "-").lower())
+        return re.sub(r"[^a-z0-9-]+", "", template.render(**arguments).replace("_", "-").lower())
 
     def _build_fields(
         self,
@@ -100,7 +100,7 @@ class ElasticSink(BatchSink):
                 self.logger.warning(f"schema key {k} with json path {v} could not be found in record: {record}")
                 schemas[k] = v
             else:
-                if len(match) < 1:
+                if len(match) > 1:
                     self.logger.warning(
                         f"schema key {k} with json path {v} has multiple associated fields, may cause side effects"
                     )
