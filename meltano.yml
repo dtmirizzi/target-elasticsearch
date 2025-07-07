@@ -21,7 +21,6 @@ plugins:
     namespace: target_elasticsearch
     pip_url: -e .
     config:
-      host: localhost
       index_format: "ecs-{{ stream_name }}-an-{{ foo }}-{{ current_timestamp_daily }}"
       stream_maps: # use stream maps to do more complex base record manipulation
         animals:

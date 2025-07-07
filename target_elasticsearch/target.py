@@ -1,97 +1,80 @@
+from pathlib import PurePath
 from typing import Dict
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 from target_elasticsearch import sinks
-from target_elasticsearch.common import (
-    INDEX_FORMAT,
-    SCHEME,
-    HOST,
-    PORT,
-    USERNAME,
-    PASSWORD,
-    BEARER_TOKEN,
-    API_KEY_ID,
-    API_KEY,
-    ENCODED_API_KEY,
-    SSL_CA_FILE,
-    INDEX_TEMPLATE_FIELDS,
-    METADATA_FIELDS,
-    INDEX_MAPPINGS,
-    REQUEST_TIMEOUT,
-    RETRY_ON_TIMEOUT,
-)
 
 
 class TargetElasticsearch(Target):
-    """Sample target for parquet."""
+    """Elasticsearch target."""
 
     name = "target-elasticsearch"
     config_jsonschema = th.PropertiesList(
         th.Property(
-            SCHEME,
+            "scheme",
             th.StringType,
             description="http scheme used for connecting to elasticsearch",
             default="http",
             required=True,
         ),
         th.Property(
-            HOST,
+            "host",
             th.StringType,
             description="host used to connect to elasticsearch",
             default="localhost",
             required=True,
         ),
         th.Property(
-            PORT,
+            "port",
             th.NumberType,
             description="port use to connect to elasticsearch",
             default=9200,
             required=True,
         ),
         th.Property(
-            USERNAME,
+            "username",
             th.StringType,
             description="basic auth username",
             default=None,
         ),
         th.Property(
-            PASSWORD,
+            "password",
             th.StringType,
             description="basic auth password",
             default=None,
         ),
         th.Property(
-            BEARER_TOKEN,
+            "bearer_token",
             th.StringType,
             description="bearer token for bearer authorization",
             default=None,
         ),
         th.Property(
-            API_KEY_ID,
+            "api_key_id",
             th.StringType,
             description="api key id for auth key authorization",
             default=None,
         ),
         th.Property(
-            API_KEY,
+            "api_key",
             th.StringType,
             description="api key for auth key authorization",
             default=None,
         ),
         th.Property(
-            ENCODED_API_KEY,
+            "encoded_api_key",
             th.StringType,
             description="Encoded api key for auth key authorization",
             default=None,
         ),
         th.Property(
-            SSL_CA_FILE,
+            "ssl_ca_file",
             th.StringType,
             description="location of the the SSL certificate for cert verification ie. `/some/path`",
             default=None,
         ),
         th.Property(
-            INDEX_FORMAT,
+            "index_format",
             th.StringType,
             description="""Index Format is used to handle custom index formatting such as specifying `-latest` index.
     ie. the default index string defined as:
@@ -111,7 +94,7 @@ class TargetElasticsearch(Target):
             default="ecs-{{ stream_name }}-{{ current_timestamp_daily}}",
         ),
         th.Property(
-            INDEX_TEMPLATE_FIELDS,
+            "index_schema_fields",
             th.ObjectType(),
             description="""Index Schema Fields allows you to specify specific record values via jsonpath
     from the stream to be used in index formulation.
@@ -123,7 +106,7 @@ class TargetElasticsearch(Target):
             default=None,
         ),
         th.Property(
-            METADATA_FIELDS,
+            "metadata_fields",
             th.ObjectType(),
             description="""Metadata Fields can be used to pull out specific fields via jsonpath to be
     used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)
@@ -133,7 +116,7 @@ class TargetElasticsearch(Target):
             default=None,
         ),
         th.Property(
-            INDEX_MAPPINGS,
+            "index_mappings",
             th.ObjectType(),
             description="""Index Mappings allows you to define field mappings for each stream/index.
     This creates or updates the Elasticsearch index mapping with the specified field types and properties.
@@ -143,19 +126,40 @@ class TargetElasticsearch(Target):
             default=None,
         ),
         th.Property(
-            REQUEST_TIMEOUT,
+            "request_timeout",
             th.NumberType,
             description="request timeout in seconds",
             default=10,
         ),
         th.Property(
-            RETRY_ON_TIMEOUT,
+            "retry_on_timeout",
             th.BooleanType,
             description="retry failed requests on timeout",
             default=True,
         ),
     ).to_dict()
     default_sink_class = sinks.ElasticSink
+
+    def __init__(
+        self,
+        *,
+        config: Dict | PurePath | str | list[PurePath | str] | None = None,
+        parse_env_config: bool = False,
+        validate_config: bool = True,
+        setup_mapper: bool = True,
+    ) -> None:
+        super().__init__(
+            config=config,
+            parse_env_config=parse_env_config,
+            validate_config=validate_config,
+            setup_mapper=setup_mapper,
+        )
+        assert bool(self.config.get("username") is None) == bool(
+            self.config.get("password") is None
+        )
+        assert bool(self.config.get("api_key_id") is None) == bool(
+            self.config.get("api_key") is None
+        )
 
     @property
     def state(self) -> Dict:
