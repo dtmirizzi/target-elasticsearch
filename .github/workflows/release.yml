@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"] # Ensure this matches the requires-python in pyproject.toml
+        python-version: ["3.11"] # Ensure this matches the requires-python in pyproject.toml
 
     steps:
     - name: Checkout repository
