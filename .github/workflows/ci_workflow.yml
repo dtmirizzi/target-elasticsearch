@@ -15,45 +15,50 @@ jobs:
       with:
         python-version: '${{ matrix.python-version }}'
 
-    - name: Install Poetry
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry==1.6.*
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v6
+
     - name: Install dependencies
-      run: |
-        poetry install
+      run: uv sync
+
     - name: Run pre-commit
       run: |
-        poetry run pre-commit install
-        poetry run pre-commit run --all-files
+        uv run pre-commit install
+        uv run pre-commit run --all-files
   pytest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9", "3.10", "3.11", "3.12"]
+        python-version: [ "3.10", "3.11", "3.12"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python '${{ matrix.python-version }}'
       uses: actions/setup-python@v2
       with:
         python-version: '${{ matrix.python-version }}'
-    - name: Install Poetry
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v6
+    - name: Set up Docker Compose
       run: |
-        pip install typing-extensions
-        python -m pip install --upgrade pip
-        pip install poetry==1.6.*
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version # Verify installation
+      shell: bash
     - name: Install dependencies
-      run: |
-        poetry install
+      run: uv sync
+    - uses: actions/cache@v4
+      with:
+        path: ~/elasticsearch
+        key: ${{ runner.os }}-elasticsearch-9
+    - uses: ankane/setup-elasticsearch@v1
     - name: Test with pytest
-      run: |
-        poetry run pytest --capture=no
+      run: uv run pytest --capture=no
 
   integration:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9", "3.12"]
+        python-version: [ "3.10", "3.11", "3.12"]
     steps:
     - uses: actions/checkout@v2
 
@@ -63,18 +68,21 @@ jobs:
         sudo chmod +x /usr/local/bin/docker-compose
         docker-compose --version # Verify installation
       shell: bash
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v6
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install meltano
-        meltano install
+      run: uv tool install meltano
+    - name: Install Meltano plugins
+      run: meltano install --clean
+    - uses: actions/cache@v4
+      with:
+        path: ~/elasticsearch
+        key: ${{ runner.os }}-elasticsearch-9
+    - uses: ankane/setup-elasticsearch@v1
     - name: smoke-test-tap
-      run: |
-        docker-compose up -d elasticsearch
-        sleep 30
-        meltano run tap-smoke-test target-elasticsearch
+
+      run: meltano run tap-smoke-test target-elasticsearch

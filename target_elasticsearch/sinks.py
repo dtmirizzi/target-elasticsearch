@@ -32,7 +32,9 @@ class ElasticSink(BatchSink):
     ):
         super().__init__(target, stream_name, schema, key_properties)
         self.client = self._authenticated_client()
-        self.index_schema_fields = self.config.get("index_schema_fields", {}).get(self.stream_name, {})
+        self.index_schema_fields = self.config.get("index_schema_fields", {}).get(
+            self.stream_name, {}
+        )
         self.metadata_fields = self.config.get("metadata_fields", {}).get(self.stream_name, {})
         self.index_mappings = self.config.get("index_mappings", {}).get(self.stream_name, {})
         self.index_name = None
@@ -97,7 +99,9 @@ class ElasticSink(BatchSink):
         for k, v in mapping.items():
             match = jsonpath_ng.parse(v).find(record)
             if len(match) == 0:
-                self.logger.warning(f"schema key {k} with json path {v} could not be found in record: {record}")
+                self.logger.warning(
+                    f"schema key {k} with json path {v} could not be found in record: {record}"
+                )
                 schemas[k] = v
             else:
                 if len(match) > 1:
@@ -208,7 +212,9 @@ class ElasticSink(BatchSink):
         Args:
             context: Dictionary containing batch processing context including records.
         """
-        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(context["records"])
+        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(
+            context["records"]
+        )
         for index in distinct_indices:
             self.create_index(index)
         try:

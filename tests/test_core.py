@@ -1,4 +1,3 @@
-import pytest
 import os
 from typing import Any
 
@@ -7,7 +6,7 @@ from target_elasticsearch.target import TargetElasticsearch
 
 SAMPLE_CONFIG: dict[str, Any] = {
     "username": "elastic",
-    "password": os.environ["TARGET_ELASTICSEARCH_PASSWORD"],
+    "password": os.environ.get("TARGET_ELASTICSEARCH_PASSWORD", "changeme"),
 }
 
 # Run standard built-in target tests from the SDK:
