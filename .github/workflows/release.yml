@@ -25,7 +25,9 @@ jobs:
 
     - name: Install uv
       # This action installs uv and adds it to the PATH
-      uses: astral-sh/uv-action@v1
+      uses: astral-sh/uv-action@v6
+      with:
+          python-version: ${{ matrix.python-version }}
 
     - name: Set package version from Git tag
       # Extract the version from the Git tag (e.g., v0.1.0 -> 0.1.0)
