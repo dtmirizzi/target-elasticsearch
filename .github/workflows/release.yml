@@ -29,6 +29,10 @@ jobs:
       with:
           python-version: ${{ matrix.python-version }}
 
+    - name: Create uv virtual environment
+      # Create a virtual environment using uv. This will be located in ./.venv by default.
+      run: uv venv
+
     - name: Set package version from Git tag
       # Extract the version from the Git tag (e.g., v0.1.0 -> 0.1.0)
       # And update the version in pyproject.toml
