@@ -1,33 +1,67 @@
-name: release
+name: Release with UV
 
 on:
   push:
     tags:
-      - '0.*'
-      - '1.*'
-      - '2.*'
+      - 'v0.*'
+      - 'v1.*'
+      - 'v2.*'
 
 jobs:
   release:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.9"] # Ensure this matches the requires-python in pyproject.toml
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python '${{ matrix.python-version }}'
-      uses: actions/setup-python@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4 # Use a more recent version of checkout action
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5 # Use a more recent version of setup-python action
       with:
-        python-version: '${{ matrix.python-version }}'
-    - name: Install Poetry
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      # This action installs uv and adds it to the PATH
+      uses: astral-sh/uv-action@v1
+
+    - name: Set package version from Git tag
+      # Extract the version from the Git tag (e.g., v0.1.0 -> 0.1.0)
+      # And update the version in pyproject.toml
       run: |
-        python -m pip install --upgrade pip
-        pip install poetry==1.6.*
-    - name: Release
-      run: |
-        poetry install
-        poetry version ${{  github.ref_name }}
-        poetry build
-        echo "Tag name from github.ref_name: ${{  github.ref_name }}"
-        poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
-        poetry publish -u ${{ secrets.PYPI_USERNAME }}
+        TAG_VERSION="${{ github.ref_name }}"
+        # Remove 'v' prefix if present
+        PACKAGE_VERSION="${TAG_VERSION#v}"
+        echo "Setting package version to: $PACKAGE_VERSION"
+        # Use sed to update the version in pyproject.toml
+        # This assumes the version is on a line like 'version = "0.0.1"'
+        sed -i "s/^version = \".*\"/version = \"$PACKAGE_VERSION\"/" pyproject.toml
+
+    - name: Install build and twine with uv
+      # These tools are needed for building and uploading the package
+      run: uv pip install build twine
+
+    - name: Sync project dependencies with uv
+      # uv sync reads pyproject.toml and installs dependencies into the virtual environment.
+      # It's faster and more reliable than pip install -r requirements.txt or poetry install.
+      run: uv sync
+
+    - name: Build package distributions
+      # The 'build' package creates source distributions (.tar.gz) and wheels (.whl)
+      # These are the files you upload to PyPI
+      run: python -m build
+
+    - name: Verify built distributions
+      # Optional: Use twine to check if the distributions are valid before uploading
+      run: twine check dist/*
+
+    - name: Publish package to PyPI
+      # Use twine to upload the built distributions to PyPI
+      # TWINE_USERNAME and TWINE_PASSWORD (or TWINE_API_KEY) are used for authentication
+      # It's highly recommended to use a PyPI API token (PYPI_TOKEN secret)
+      env:
+        TWINE_USERNAME: __token__ # Special username for API tokens
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
+      run: twine upload --repository pypi dist/*
