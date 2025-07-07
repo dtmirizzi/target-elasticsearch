@@ -1,38 +1,46 @@
-[tool.poetry]
+[project]
 name = "target-elasticsearch"
 version = "1.0.2"
 description = "`target-elasticsearch` is a singer target using the meltano SDK for targets"
-authors = ["DT Mirizzi <dtmirizzi@gmail.com>"]
+authors = [{ name = "DT Mirizzi", email = "dtmirizzi@gmail.com" }]
+requires-python = "<3.13,>=3.9.1"
+license = "GPL-3.0"
 keywords = [
     "elasticsearch",
     "ELT",
     "target",
     "meltano",
-    "singer"
+    "singer",
 ]
-license = "GNU v3"
+dependencies = [
+    "requests>=2.25.1",
+    "singer-sdk>=0.38.0",
+    "elasticsearch>=8.14.0",
+    "Jinja2>=3.1.2",
+    "jsonpath-ng>=1.5.3",
+    "types-python-dateutil>=2.8.19",
+    "time-machine>=2.8.2",
+    "typing-extensions>=4.4.0",
+]
 
+[project.scripts]
+target-elasticsearch = "target_elasticsearch.target:TargetElasticsearch.cli"
 
-[tool.poetry.dependencies]
-python = "<3.13,>=3.9.1"
-requests = "^2.25.1"
-singer-sdk = "^0.38.0"
-elasticsearch = "^8.14.0"
-Jinja2 = "^3.1.2"
-jsonpath-ng = "^1.5.3"
-types-python-dateutil = "^2.8.19"
-time-machine = "^2.8.2"
-typing-extensions = "^4.4.0"
+[dependency-groups]
+dev = [
+    "pytest>=7.1.2,<8",
+    "tox>=3.24.4,<4",
+    "flake8>=4.0.1,<5",
+    "black>=22.3.0,<23",
+    "pydocstyle>=6.1.1,<7",
+    "mypy>=0.960,<0.961",
+    "isort>=5.10.1,<6",
+    "pre-commit>=2.19.0,<3",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.1.2"
-tox = "^3.24.4"
-flake8 = "^4.0.1"
-black = "^22.3.0"
-pydocstyle = "^6.1.1"
-mypy = "^0.960"
-isort = "^5.10.1"
-pre-commit = "^2.19.0"
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=1,<2"]
 
 [tool.isort]
 profile = "black"
@@ -42,11 +50,3 @@ src_paths = "target_elasticsearch"
 [tool.black]
 line-length = 120
 target-version = ['py39']
-
-[build-system]
-requires = ["poetry-core>=1.0.8"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-# CLI declaration
-target-elasticsearch = 'target_elasticsearch.target:TargetElasticsearch.cli'
