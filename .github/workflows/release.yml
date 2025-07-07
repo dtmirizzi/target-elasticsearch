@@ -42,7 +42,7 @@ jobs:
         sed -i "s/^version = \".*\"/version = \"$PACKAGE_VERSION\"/" pyproject.toml
 
     - name: Install build and twine with uv
-      run: uv pip install build twine
+      run: uv pip install build
 
     - name: Sync project dependencies with uv
       run: uv sync
@@ -50,11 +50,9 @@ jobs:
     - name: Build package distributions
       run: uv build
 
-    - name: Verify built distributions
-      run: uv run twine check dist/*
-
     - name: Publish package to PyPI
       env:
-        TWINE_USERNAME: __token__ # Special username for API tokens
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
-      run: uv run twine upload --repository pypi dist/*
+        UV_PUBLISH_USERNAME: __token__ # Special username for API tokens
+        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
+        UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_PASS }}
+      run: uv publish
