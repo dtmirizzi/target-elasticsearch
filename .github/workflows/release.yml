@@ -16,26 +16,22 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4 # Use a more recent version of checkout action
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5 # Use a more recent version of setup-python action
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      # This action installs uv and adds it to the PATH
       uses: astral-sh/setup-uv@v6
       with:
           python-version: ${{ matrix.python-version }}
 
     - name: Create uv virtual environment
-      # Create a virtual environment using uv. This will be located in ./.venv by default.
       run: uv venv
 
     - name: Set package version from Git tag
-      # Extract the version from the Git tag (e.g., v0.1.0 -> 0.1.0)
-      # And update the version in pyproject.toml
       run: |
         TAG_VERSION="${{ github.ref_name }}"
         # Remove 'v' prefix if present
@@ -46,28 +42,19 @@ jobs:
         sed -i "s/^version = \".*\"/version = \"$PACKAGE_VERSION\"/" pyproject.toml
 
     - name: Install build and twine with uv
-      # These tools are needed for building and uploading the package
       run: uv pip install build twine
 
     - name: Sync project dependencies with uv
-      # uv sync reads pyproject.toml and installs dependencies into the virtual environment.
-      # It's faster and more reliable than pip install -r requirements.txt or poetry install.
       run: uv sync
 
     - name: Build package distributions
-      # The 'build' package creates source distributions (.tar.gz) and wheels (.whl)
-      # These are the files you upload to PyPI
-      run: python -m build
+      run: uv build
 
     - name: Verify built distributions
-      # Optional: Use twine to check if the distributions are valid before uploading
-      run: twine check dist/*
+      run: uv run twine check dist/*
 
     - name: Publish package to PyPI
-      # Use twine to upload the built distributions to PyPI
-      # TWINE_USERNAME and TWINE_PASSWORD (or TWINE_API_KEY) are used for authentication
-      # It's highly recommended to use a PyPI API token (PYPI_TOKEN secret)
       env:
         TWINE_USERNAME: __token__ # Special username for API tokens
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
-      run: twine upload --repository pypi dist/*
+      run: uv run twine upload --repository pypi dist/*
