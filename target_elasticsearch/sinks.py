@@ -1,6 +1,7 @@
 import elasticsearch
 import elasticsearch.helpers
 import jinja2
+import re
 
 from typing import Optional, Union, Any, Tuple, Set
 
@@ -75,7 +76,7 @@ class ElasticSink(BatchSink):
         }
         environment = jinja2.Environment()
         template = environment.from_string(self.config["index_format"])
-        return template.render(**arguments).replace("_", "-")
+        return re.sub("[^A-Za-z0-9]+", "", template.render(**arguments).replace("_", "-").lower())
 
     def _build_fields(
         self,

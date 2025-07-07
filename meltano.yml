@@ -21,7 +21,6 @@ plugins:
     namespace: target_elasticsearch
     pip_url: -e .
     config:
-      host: localhost
       username: $TARGET_ELASTICSEARCH_USERNAME
       password: $TARGET_ELASTICSEARCH_PASSWORD
       index_format: "ecs-{{ stream_name }}-an-{{ foo }}-{{ current_timestamp_daily }}"
