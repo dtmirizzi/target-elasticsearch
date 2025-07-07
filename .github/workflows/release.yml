@@ -53,5 +53,4 @@ jobs:
     - name: Publish package to PyPI
       env:
         UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
-        UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_PASS }}
       run: uv publish
