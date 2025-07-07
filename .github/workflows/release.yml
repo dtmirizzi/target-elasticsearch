@@ -25,7 +25,7 @@ jobs:
 
     - name: Install uv
       # This action installs uv and adds it to the PATH
-      uses: astral-sh/uv-action@v6
+      uses: astral-sh/setup-uv@v6
       with:
           python-version: ${{ matrix.python-version }}
 
