@@ -120,8 +120,8 @@ class TargetElasticsearch(Target):
             th.ObjectType(),
             description="""Index Mappings allows you to define field mappings for each stream/index.
     This creates or updates the Elasticsearch index mapping with the specified field types and properties.
-    Format: {"stream_name": {"properties": {"field_name": {"type": "text", "analyzer": "standard"}}}}
-    Example: {"users": {"properties": {"email": {"type": "keyword"}, "created_at": {"type": "date"}}}}
+    Format: {"stream_name": {"field_name": {"type": "text", "analyzer": "standard"}}}
+    Example: {"users": {"email": {"type": "keyword"}, "created_at": {"type": "date"}}}
     See: https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html""",
             default=None,
         ),
@@ -154,12 +154,8 @@ class TargetElasticsearch(Target):
             validate_config=validate_config,
             setup_mapper=setup_mapper,
         )
-        assert bool(self.config.get("username") is None) == bool(
-            self.config.get("password") is None
-        )
-        assert bool(self.config.get("api_key_id") is None) == bool(
-            self.config.get("api_key") is None
-        )
+        assert bool(self.config.get("username") is None) == bool(self.config.get("password") is None)
+        assert bool(self.config.get("api_key_id") is None) == bool(self.config.get("api_key") is None)
 
     @property
     def state(self) -> Dict:
