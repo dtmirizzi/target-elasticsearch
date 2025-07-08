@@ -154,8 +154,12 @@ class TargetElasticsearch(Target):
             validate_config=validate_config,
             setup_mapper=setup_mapper,
         )
-        assert bool(self.config.get("username") is None) == bool(self.config.get("password") is None)
-        assert bool(self.config.get("api_key_id") is None) == bool(self.config.get("api_key") is None)
+        assert bool(self.config.get("username") is None) == bool(
+            self.config.get("password") is None
+        )
+        assert bool(self.config.get("api_key_id") is None) == bool(
+            self.config.get("api_key") is None
+        )
 
     @property
     def state(self) -> Dict:
