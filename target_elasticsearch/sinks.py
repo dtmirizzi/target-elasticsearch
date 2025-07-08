@@ -32,9 +32,7 @@ class ElasticSink(BatchSink):
     ):
         super().__init__(target, stream_name, schema, key_properties)
         self.client = self._authenticated_client()
-        self.index_schema_fields = self.config.get("index_schema_fields", {}).get(
-            self.stream_name, {}
-        )
+        self.index_schema_fields = self.config.get("index_schema_fields", {}).get(self.stream_name, {})
         self.metadata_fields = self.config.get("metadata_fields", {}).get(self.stream_name, {})
         self.index_mappings = self.config.get("index_mappings", {}).get(self.stream_name, {})
         self.index_name = None
@@ -99,9 +97,7 @@ class ElasticSink(BatchSink):
         for k, v in mapping.items():
             match = jsonpath_ng.parse(v).find(record)
             if len(match) == 0:
-                self.logger.warning(
-                    f"schema key {k} with json path {v} could not be found in record: {record}"
-                )
+                self.logger.warning(f"schema key {k} with json path {v} could not be found in record: {record}")
                 schemas[k] = v
             else:
                 if len(match) > 1:
@@ -154,23 +150,24 @@ class ElasticSink(BatchSink):
                 mappings = {
                     key: value["mapping"][key]["type"]
                     for key, value in self.client.indices.get_field_mapping(
-                        index=index, fields=self.index_mappings.keys()
-                    )["mappings"].items()
+                        index=index, fields=list(self.index_mappings.keys())
+                    )[index]["mappings"].items()
                 }
-                if not all(self.index_mappings[key] == value for key, value in mappings):
-                    self.logger.warning(
-                        f"Index {index} already exists with different mappings. Recreate index with new mappings."
-                    )
-                elif mappings.keys() != self.index_mappings.keys():
-                    self.logger.info(
-                        f"Index {index} exists but with different fields. Updating mapping for existing index."
-                    )
-                    self.client.indices.put_mapping(index=index, body=self.index_mappings)
+                if not all(self.index_mappings[key]["type"] == value for key, value in mappings.items()):
+                    try:
+                        self.client.indices.put_mapping(index=index, body={"properties": self.index_mappings})
+                    except elasticsearch.exceptions.BadRequestError as e:
+                        if e.message == "illegal_argument_exception":
+                            self.logger.warning(
+                                f"Failed to update mapping for index {index}: {e}, recreate index to apply new mappings."
+                            )
+                        else:
+                            raise e
             else:
                 self.logger.debug(f"Index {index} already exists, skipping creation.")
         else:
             self.logger.info(f"Creating index {index} with mappings: {self.index_mappings}")
-            self.client.indices.create(index=index, mappings=self.index_mappings)
+            self.client.indices.create(index=index, mappings={"properties": self.index_mappings})
 
     def _authenticated_client(self) -> elasticsearch.Elasticsearch:
         """Generate a newly authenticated Elasticsearch client.
@@ -212,9 +209,7 @@ class ElasticSink(BatchSink):
         Args:
             context: Dictionary containing batch processing context including records.
         """
-        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(
-            context["records"]
-        )
+        updated_records, distinct_indices = self.build_request_body_and_distinct_indices(context["records"])
         for index in distinct_indices:
             self.create_index(index)
         try:
