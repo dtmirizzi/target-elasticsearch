@@ -12,10 +12,8 @@ in __init__ avoids this overhead. These tests verify:
 from unittest.mock import MagicMock, patch
 
 import jsonpath_ng
-import pytest
 
 from target_elasticsearch.sinks import ElasticSink
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -39,7 +37,13 @@ def _make_sink(metadata_fields=None, index_schema_fields=None):
     mock_target.config = config
     mock_target._get_package_version.return_value = "0.0.0-test"
 
-    schema = {"properties": {"id": {"type": "string"}, "name": {"type": "string"}, "category": {"type": "string"}}}
+    schema = {
+        "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "category": {"type": "string"},
+        }
+    }
 
     with patch.object(ElasticSink, "_authenticated_client", return_value=MagicMock()):
         sink = ElasticSink(
@@ -65,7 +69,9 @@ class TestJsonPathParseCalledPerRecord:
         mapping = {"_id": "id", "category": "category"}
         record = {"id": "123", "name": "test", "category": "animals"}
 
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             # Call _build_fields 5 times (simulating 5 records) without compiled expressions
             for _ in range(5):
                 sink._build_fields(mapping, record)
@@ -82,14 +88,16 @@ class TestJsonPathParseCalledPerRecord:
         mapping = {"_id": "id"}
         records = [{"id": str(i), "name": f"test_{i}"} for i in range(100)]
 
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             for record in records:
                 sink._build_fields(mapping, record)
 
             # 1 key * 100 records = 100 parse calls
-            assert mock_parse.call_count == 100, (
-                f"Expected 100 parse calls (1 key x 100 records), got {mock_parse.call_count}"
-            )
+            assert (
+                mock_parse.call_count == 100
+            ), f"Expected 100 parse calls (1 key x 100 records), got {mock_parse.call_count}"
 
 
 # ---------------------------------------------------------------------------
@@ -179,15 +187,17 @@ class TestCachingEliminatesParseCalls:
         # Pre-compile expressions (this calls parse once per key)
         compiled = {k: jsonpath_ng.parse(v) for k, v in mapping.items()}
 
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             # Call _build_fields with pre-compiled expressions
             for _ in range(100):
                 sink._build_fields(mapping, record, compiled=compiled)
 
             # parse() should NOT be called at all since we provided compiled expressions
-            assert mock_parse.call_count == 0, (
-                f"Expected 0 parse calls when using compiled expressions, got {mock_parse.call_count}"
-            )
+            assert (
+                mock_parse.call_count == 0
+            ), f"Expected 0 parse calls when using compiled expressions, got {mock_parse.call_count}"
 
     def test_parse_called_only_for_missing_compiled_keys(self):
         """If compiled dict is partial, parse() is only called for missing keys."""
@@ -198,14 +208,16 @@ class TestCachingEliminatesParseCalls:
         # Only pre-compile 2 of 3 keys
         compiled = {"_id": jsonpath_ng.parse("id"), "category": jsonpath_ng.parse("category")}
 
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             for _ in range(10):
                 sink._build_fields(mapping, record, compiled=compiled)
 
             # parse() should only be called for the missing key "name", once per invocation
-            assert mock_parse.call_count == 10, (
-                f"Expected 10 parse calls (1 missing key x 10 records), got {mock_parse.call_count}"
-            )
+            assert (
+                mock_parse.call_count == 10
+            ), f"Expected 10 parse calls (1 missing key x 10 records), got {mock_parse.call_count}"
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +236,9 @@ class TestSinkInitPreCompilation:
         assert set(sink.compiled_metadata_fields.keys()) == {"_id", "cat"}
         # Each value should be a compiled JSONPath expression, not a string
         for key, expr in sink.compiled_metadata_fields.items():
-            assert hasattr(expr, "find"), f"compiled_metadata_fields['{key}'] is not a compiled JSONPath expression"
+            assert hasattr(
+                expr, "find"
+            ), f"compiled_metadata_fields['{key}'] is not a compiled JSONPath expression"
 
     def test_compiled_index_schema_fields_created(self):
         """Sink should have compiled_index_schema_fields dict after init."""
@@ -233,9 +247,9 @@ class TestSinkInitPreCompilation:
         assert hasattr(sink, "compiled_index_schema_fields")
         assert set(sink.compiled_index_schema_fields.keys()) == {"timestamp", "region"}
         for key, expr in sink.compiled_index_schema_fields.items():
-            assert hasattr(expr, "find"), (
-                f"compiled_index_schema_fields['{key}'] is not a compiled JSONPath expression"
-            )
+            assert hasattr(
+                expr, "find"
+            ), f"compiled_index_schema_fields['{key}'] is not a compiled JSONPath expression"
 
     def test_empty_fields_produce_empty_compiled_dicts(self):
         """When no metadata/schema fields are configured, compiled dicts should be empty."""
@@ -255,7 +269,9 @@ class TestSinkInitPreCompilation:
 
         records = [{"id": str(i), "name": f"record_{i}"} for i in range(50)]
 
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             sink.build_request_body_and_distinct_indices(records)
 
             # With caching, parse() should NOT be called during batch processing
@@ -301,26 +317,32 @@ class TestPerformanceCharacteristic:
         num_records = 200
         mapping = {"_id": "id", "cat": "category", "nm": "name"}
         num_keys = len(mapping)
-        records = [{"id": str(i), "name": f"name_{i}", "category": f"cat_{i}"} for i in range(num_records)]
+        records = [
+            {"id": str(i), "name": f"name_{i}", "category": f"cat_{i}"} for i in range(num_records)
+        ]
 
         sink = _make_sink()
 
         # --- Uncached: parse() called per key per record ---
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             for record in records:
                 sink._build_fields(mapping, record)
             uncached_count = mock_parse.call_count
 
         # --- Cached: parse() called zero times during processing ---
         compiled = {k: jsonpath_ng.parse(v) for k, v in mapping.items()}
-        with patch("target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse) as mock_parse:
+        with patch(
+            "target_elasticsearch.sinks.jsonpath_ng.parse", wraps=jsonpath_ng.parse
+        ) as mock_parse:
             for record in records:
                 sink._build_fields(mapping, record, compiled=compiled)
             cached_count = mock_parse.call_count
 
-        assert uncached_count == num_records * num_keys, (
-            f"Uncached should call parse {num_records * num_keys} times, got {uncached_count}"
-        )
+        assert (
+            uncached_count == num_records * num_keys
+        ), f"Uncached should call parse {num_records * num_keys} times, got {uncached_count}"
         assert cached_count == 0, f"Cached should call parse 0 times, got {cached_count}"
 
         # The savings: all parse calls eliminated
