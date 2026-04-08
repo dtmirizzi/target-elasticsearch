@@ -38,6 +38,14 @@ class ElasticSink(BatchSink):
         self.metadata_fields = self.config.get("metadata_fields", {}).get(self.stream_name, {})
         self.index_mappings = self.config.get("index_mappings", {}).get(self.stream_name, {})
         self.index_name = None
+        self.compiled_metadata_fields = {
+            k: jsonpath_ng.parse(v)
+            for k, v in (self.metadata_fields or {}).items()
+        }
+        self.compiled_index_schema_fields = {
+            k: jsonpath_ng.parse(v)
+            for k, v in (self.index_schema_fields or {}).items()
+        }
 
     def setup(self) -> None:
         """Perform any setup actions at the beginning of a Stream.
@@ -84,20 +92,22 @@ class ElasticSink(BatchSink):
         self,
         mapping: dict,
         record: dict[str, Union[str, dict[str, str], int]],
+        compiled: dict = None,
     ) -> dict:
         """Parse records for supplied mapping to be used in index templating and ECS metadata field formulation.
 
         Args:
             mapping: Dictionary mapping configuration.
             record: Input record to parse.
+            compiled: Optional pre-compiled JSONPath expressions keyed by mapping key.
 
         Returns:
             Dictionary of parsed schema fields.
         """
         schemas = {}
-        self.logger.debug("index_schema_fields", ": ", mapping)
         for k, v in mapping.items():
-            match = jsonpath_ng.parse(v).find(record)
+            expression = compiled[k] if compiled and k in compiled else jsonpath_ng.parse(v)
+            match = expression.find(record)
             if len(match) == 0:
                 self.logger.warning(
                     f"schema key {k} with json path {v} could not be found in record: {record}"
@@ -130,14 +140,14 @@ class ElasticSink(BatchSink):
 
         for record in records:
             if self.index_schema_fields:
-                index = self._template_index(self._build_fields(self.index_schema_fields, record))
+                index = self._template_index(self._build_fields(self.index_schema_fields, record, self.compiled_index_schema_fields))
                 distinct_indices.add(index)
             else:
                 index = self.index_name
             updated_record = {"_op_type": "index", "_index": index, "_source": record}
             if self.metadata_fields is not None:
                 # Build metadata fields for the record
-                metadata_fields = self._build_fields(self.metadata_fields, record)
+                metadata_fields = self._build_fields(self.metadata_fields, record, self.compiled_metadata_fields)
                 updated_record.update(metadata_fields)
             updated_records.append(updated_record)
 
