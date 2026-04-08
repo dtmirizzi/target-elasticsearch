@@ -39,12 +39,10 @@ class ElasticSink(BatchSink):
         self.index_mappings = self.config.get("index_mappings", {}).get(self.stream_name, {})
         self.index_name = None
         self.compiled_metadata_fields = {
-            k: jsonpath_ng.parse(v)
-            for k, v in (self.metadata_fields or {}).items()
+            k: jsonpath_ng.parse(v) for k, v in (self.metadata_fields or {}).items()
         }
         self.compiled_index_schema_fields = {
-            k: jsonpath_ng.parse(v)
-            for k, v in (self.index_schema_fields or {}).items()
+            k: jsonpath_ng.parse(v) for k, v in (self.index_schema_fields or {}).items()
         }
 
     def setup(self) -> None:
@@ -140,14 +138,20 @@ class ElasticSink(BatchSink):
 
         for record in records:
             if self.index_schema_fields:
-                index = self._template_index(self._build_fields(self.index_schema_fields, record, self.compiled_index_schema_fields))
+                index = self._template_index(
+                    self._build_fields(
+                        self.index_schema_fields, record, self.compiled_index_schema_fields
+                    )
+                )
                 distinct_indices.add(index)
             else:
                 index = self.index_name
             updated_record = {"_op_type": "index", "_index": index, "_source": record}
             if self.metadata_fields is not None:
                 # Build metadata fields for the record
-                metadata_fields = self._build_fields(self.metadata_fields, record, self.compiled_metadata_fields)
+                metadata_fields = self._build_fields(
+                    self.metadata_fields, record, self.compiled_metadata_fields
+                )
                 updated_record.update(metadata_fields)
             updated_records.append(updated_record)
 
