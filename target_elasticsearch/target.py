@@ -74,6 +74,12 @@ class TargetElasticsearch(Target):
             default=None,
         ),
         th.Property(
+            "verify_certs",
+            th.BooleanType,
+            description="whether to verify SSL certificates when connecting to Elasticsearch",
+            default=True,
+        ),
+        th.Property(
             "index_format",
             th.StringType,
             description="""Index Format is used to handle custom index formatting such as specifying `-latest` index.

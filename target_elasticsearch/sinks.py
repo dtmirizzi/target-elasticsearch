@@ -209,6 +209,7 @@ class ElasticSink(BatchSink):
         config["hosts"] = [f"{scheme}://{self.config['host']}:{self.config['port']}"]
         config["request_timeout"] = self.config["request_timeout"]
         config["retry_on_timeout"] = self.config["retry_on_timeout"]
+        config["verify_certs"] = self.config["verify_certs"]
 
         if self.config.get("username") and self.config.get("password"):
             config["basic_auth"] = (self.config["username"], self.config["password"])
