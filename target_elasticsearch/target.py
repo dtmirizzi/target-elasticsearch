@@ -1,7 +1,9 @@
 from pathlib import PurePath
 from typing import Dict
+
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
+
 from target_elasticsearch import sinks
 
 
@@ -115,7 +117,8 @@ class TargetElasticsearch(Target):
             "metadata_fields",
             th.ObjectType(),
             description="""Metadata Fields can be used to pull out specific fields via jsonpath to be
-    used on for [ecs metadata patters](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)
+    used on for [ecs metadata patters](
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html)
     This would best be used for data that has a primary key.
     ie. `{"guid": 102, "foo": "bar"}`
     then create a mapping of `_id: guid""",
@@ -160,12 +163,10 @@ class TargetElasticsearch(Target):
             validate_config=validate_config,
             setup_mapper=setup_mapper,
         )
-        assert bool(self.config.get("username") is None) == bool(
-            self.config.get("password") is None
-        )
-        assert bool(self.config.get("api_key_id") is None) == bool(
-            self.config.get("api_key") is None
-        )
+        if (self.config.get("username") is None) != (self.config.get("password") is None):
+            raise ValueError("`username` and `password` must be provided together.")
+        if (self.config.get("api_key_id") is None) != (self.config.get("api_key") is None):
+            raise ValueError("`api_key_id` and `api_key` must be provided together.")
 
     @property
     def state(self) -> Dict:
