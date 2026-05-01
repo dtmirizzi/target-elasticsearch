@@ -1,10 +1,19 @@
+.PHONY: init local-es test lint format
+
 init:
-	poetry install
-	poetry run pre-commit install
+	uv sync
+	uv run pre-commit install
 	meltano install
+
 local-es:
-	docker-compose up -d
+	docker compose up -d
+
 test:
-	poetry run pytest
+	uv run pytest
+
 lint:
-	poetry run pre-commit run --all-files
+	uv run pre-commit run --all-files
+
+format:
+	uv run black target_elasticsearch tests
+	uv run isort target_elasticsearch tests
