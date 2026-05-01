@@ -1,56 +1,50 @@
-name: Release with UV
+name: Release
 
 on:
   push:
     tags:
-      - '0.*'
-      - '1.*'
-      - '2.*'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11"] # Ensure this matches the requires-python in pyproject.toml
-
+    permissions:
+      contents: write
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
 
-    - name: Create uv virtual environment
-      run: uv venv
+      - name: Set package version from Git tag
+        run: |
+          TAG_VERSION="${{ github.ref_name }}"
+          PACKAGE_VERSION="${TAG_VERSION#v}"
+          echo "Setting package version to: $PACKAGE_VERSION"
+          sed -i "s/^version = \".*\"/version = \"$PACKAGE_VERSION\"/" pyproject.toml
 
-    - name: Set package version from Git tag
-      run: |
-        TAG_VERSION="${{ github.ref_name }}"
-        # Remove 'v' prefix if present
-        PACKAGE_VERSION="${TAG_VERSION#v}"
-        echo "Setting package version to: $PACKAGE_VERSION"
-        # Use sed to update the version in pyproject.toml
-        # This assumes the version is on a line like 'version = "0.0.1"'
-        sed -i "s/^version = \".*\"/version = \"$PACKAGE_VERSION\"/" pyproject.toml
+      - name: Sync project dependencies
+        run: uv sync
 
-    - name: Install build and twine with uv
-      run: uv pip install build
+      - name: Build package distributions
+        run: uv build
 
-    - name: Sync project dependencies with uv
-      run: uv sync
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish
 
-    - name: Build package distributions
-      run: uv build
-
-    - name: Publish package to PyPI
-      env:
-        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }} # Your PyPI API token
-      run: uv publish
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

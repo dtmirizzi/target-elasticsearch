@@ -1,88 +1,78 @@
 name: tests
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linting:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9]
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python '${{ matrix.python-version }}'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '${{ matrix.python-version }}'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync
+      - name: Run pre-commit
+        run: |
+          uv run pre-commit install
+          uv run pre-commit run --all-files
 
-    - name: Install the latest version of uv
-      uses: astral-sh/setup-uv@v6
-
-    - name: Install dependencies
-      run: uv sync
-
-    - name: Run pre-commit
-      run: |
-        uv run pre-commit install
-        uv run pre-commit run --all-files
   pytest:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [ "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python '${{ matrix.python-version }}'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '${{ matrix.python-version }}'
-    - name: Install the latest version of uv
-      uses: astral-sh/setup-uv@v6
-    - name: Set up Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version # Verify installation
-      shell: bash
-    - name: Install dependencies
-      run: uv sync
-    - uses: actions/cache@v4
-      with:
-        path: ~/elasticsearch
-        key: ${{ runner.os }}-elasticsearch-9
-    - uses: ankane/setup-elasticsearch@v1
-    - name: Test with pytest
-      run: uv run pytest --capture=no
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync
+      - uses: actions/cache@v4
+        with:
+          path: ~/elasticsearch
+          key: ${{ runner.os }}-elasticsearch-9
+      - uses: ankane/setup-elasticsearch@v1
+      - name: Run pytest
+        run: uv run pytest --capture=no
 
   integration:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [ "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version # Verify installation
-      shell: bash
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install the latest version of uv
-      uses: astral-sh/setup-uv@v6
-    - name: Install dependencies
-      run: uv tool install meltano
-    - name: Install Meltano plugins
-      run: meltano install --clean
-    - uses: actions/cache@v4
-      with:
-        path: ~/elasticsearch
-        key: ${{ runner.os }}-elasticsearch-9
-    - uses: ankane/setup-elasticsearch@v1
-    - name: smoke-test-tap
-
-      run: meltano run tap-smoke-test target-elasticsearch
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install Meltano
+        run: uv tool install meltano
+      - name: Install Meltano plugins
+        run: meltano install --clean
+      - uses: actions/cache@v4
+        with:
+          path: ~/elasticsearch
+          key: ${{ runner.os }}-elasticsearch-9
+      - uses: ankane/setup-elasticsearch@v1
+      - name: smoke-test-tap
+        run: meltano run tap-smoke-test target-elasticsearch
